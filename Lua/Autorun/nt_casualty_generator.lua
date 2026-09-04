@@ -33,14 +33,18 @@ local FIXED_FOREIGN_BODY = 30
 local FIXED_RIB_FRACTURE = 100
 local FIXED_ASSISTANT_RIB_FRACTURE = 30
 
-local FIXED_BLOODLOSS = 100
+local FIXED_BLOODLOSS = 0
 local FIXED_INFECTED_CAVITY = 5
-local FIXED_HYPOXEMIA = 50
-local FIXED_CARDIAC_ARREST = 10
+local FIXED_HYPOXEMIA = 0
+local FIXED_CARDIAC_ARREST = 0
 local FIXED_SKULL_FRACTURE = 100
 local FIXED_AMPUTATION_FRACTURE = 100
 local FIXED_OTHER_LEG_FRACTURE = 100
 local FIXED_ARTERY_DAMAGE = 30
+
+local FIXED_FOREIGN_BODY = 30
+local FIXED_SECURITY_FOREIGN_BODY = 20
+local FIXED_ENGINEER_FOREIGN_BODY = 20
 
 -- 机电只保留一个创伤性截肢，固定左腿。
 local FIXED_AMPUTATION_LIMB = LimbType.LeftLeg
@@ -49,7 +53,7 @@ local FIXED_OTHER_LEG = LimbType.RightLeg
 -- 主动脉破裂 identifier。若当前 Neurotrauma 版本使用不同 identifier，
 -- 只需修改这一项，不影响其他固定伤情。
 local FIXED_AORTIC_RUPTURE_AFFLICTION = "aorticrupture"
-local FIXED_AORTIC_RUPTURE_STRENGTH = 100
+local FIXED_AORTIC_RUPTURE_STRENGTH = 0
 
 -- NPC 横向排列间距
 -- 约 1.5 个角色身高
@@ -982,10 +986,12 @@ local function fixed_add_extremity_wounds(c, gunshot, bleeding)
     end
 end
 
-local function fixed_add_torso_wounds(c, gunshot, bleeding)
+local function fixed_add_torso_wounds(c, gunshot, bleeding, foreignBody)
     add(c, "gunshotwound", gunshot, LimbType.Torso)
     add(c, "bleeding", bleeding, LimbType.Torso)
-    add(c, "foreignbody", FIXED_FOREIGN_BODY, LimbType.Torso)
+    if foreignBody ~= nil and foreignBody > 0 then
+        add(c, "foreignbody", foreignBody, LimbType.Torso)
+    end
 end
 
 local function fixed_add_leg_fracture(c, limb, strength)
@@ -1053,7 +1059,12 @@ local function fixed_add_other_leg_trauma(c)
     )
 end
 
-local function fixed_apply_major_role(c, isCaptain)
+--------------------------------------------------
+-- 船长固定伤势
+--------------------------------------------------
+
+local function fixed_apply_captain(c)
+
     -- 四肢：枪伤 20 / 出血 30
     fixed_add_extremity_wounds(
         c,
@@ -1065,7 +1076,8 @@ local function fixed_apply_major_role(c, isCaptain)
     fixed_add_torso_wounds(
         c,
         FIXED_TORSO_GUNSHOT,
-        FIXED_TORSO_BLEEDING
+        FIXED_TORSO_BLEEDING,
+        FIXED_FOREIGN_BODY
     )
 
     -- 肋骨骨折 100
@@ -1076,11 +1088,19 @@ local function fixed_apply_major_role(c, isCaptain)
         LimbType.Torso
     )
 
-    -- 低血氧 100
-    add(c, "hypoxemia", FIXED_HYPOXEMIA)
+    -- 低血氧
+    add(
+        c,
+        "hypoxemia",
+        FIXED_HYPOXEMIA
+    )
 
     -- 心脏骤停
-    add(c, "cardiacarrest", FIXED_CARDIAC_ARREST)
+    add(
+        c,
+        "cardiacarrest",
+        FIXED_CARDIAC_ARREST
+    )
 
     -- 左腿：创伤性截肢 + 骨折 + 动脉破裂 + 异物
     fixed_amputate_limb(
@@ -1088,27 +1108,79 @@ local function fixed_apply_major_role(c, isCaptain)
         FIXED_AMPUTATION_LIMB
     )
 
-    -- 右腿：骨折 + 动脉破裂，不截肢
+    -- 右腿：骨折 + 动脉破裂
     fixed_add_other_leg_trauma(c)
 
-    -- Security 有颅骨破裂，Captain 取消
-    if not isCaptain then
-        add(
-            c,
-            "h_fracture",
-            FIXED_SKULL_FRACTURE
-        )
-    end
+    -- 船长不添加颅骨骨折
 
-    -- Captain 额外添加躯干主动脉破裂
-    if isCaptain then
-        add(
-            c,
-            FIXED_AORTIC_RUPTURE_AFFLICTION,
-            FIXED_AORTIC_RUPTURE_STRENGTH,
-            LimbType.Torso
-        )
-    end
+    -- 主动脉破裂
+    add(
+        c,
+        FIXED_AORTIC_RUPTURE_AFFLICTION,
+        FIXED_AORTIC_RUPTURE_STRENGTH,
+        LimbType.Torso
+    )
+end
+
+
+--------------------------------------------------
+-- 安全官固定伤势
+--------------------------------------------------
+
+local function fixed_apply_security(c)
+
+    -- 四肢：枪伤 20 / 出血 30
+    fixed_add_extremity_wounds(
+        c,
+        FIXED_EXTREMITY_GUNSHOT,
+        FIXED_EXTREMITY_BLEEDING
+    )
+
+    -- 躯干：枪伤 30 / 出血 50 / 异物 20
+    fixed_add_torso_wounds(
+        c,
+        FIXED_TORSO_GUNSHOT,
+        FIXED_TORSO_BLEEDING,
+        FIXED_SECURITY_FOREIGN_BODY
+    )
+
+    -- 肋骨骨折 100
+    add(
+        c,
+        "t_fracture",
+        FIXED_RIB_FRACTURE,
+        LimbType.Torso
+    )
+
+    -- 低血氧
+    add(
+        c,
+        "hypoxemia",
+        FIXED_HYPOXEMIA
+    )
+
+    -- 心脏骤停
+    add(
+        c,
+        "cardiacarrest",
+        FIXED_CARDIAC_ARREST
+    )
+
+    -- 左腿：创伤性截肢 + 骨折 + 动脉破裂 + 异物
+    fixed_amputate_limb(
+        c,
+        FIXED_AMPUTATION_LIMB
+    )
+
+    -- 右腿：骨折 + 动脉破裂
+    fixed_add_other_leg_trauma(c)
+
+    -- 安全官保留颅骨骨折
+    add(
+        c,
+        "h_fracture",
+        FIXED_SKULL_FRACTURE
+    )
 end
 
 local function fixed_apply_engineer_role(c)
@@ -1123,7 +1195,8 @@ local function fixed_apply_engineer_role(c)
     fixed_add_torso_wounds(
         c,
         FIXED_TORSO_GUNSHOT,
-        FIXED_ENGINEER_TORSO_BLEEDING
+        FIXED_ENGINEER_TORSO_BLEEDING,
+        FIXED_ENGINEER_FOREIGN_BODY
     )
 
     -- 肋骨骨折 100
@@ -1153,7 +1226,8 @@ local function fixed_apply_assistant(c)
     fixed_add_torso_wounds(
         c,
         FIXED_ASSISTANT_TORSO_GUNSHOT,
-        FIXED_ASSISTANT_TORSO_BLEEDING
+        FIXED_ASSISTANT_TORSO_BLEEDING,
+        nil
     )
 
     -- 肋骨骨折 30
@@ -1165,21 +1239,31 @@ local function fixed_apply_assistant(c)
     )
 end
 
+--------------------------------------------------
+-- 根据职业应用固定伤势
+--------------------------------------------------
+
 local function fixed_apply_role_injuries(c, jobName)
+
     if jobName == "captain" then
-        fixed_apply_major_role(c, true)
+
+        fixed_apply_captain(c)
 
     elseif jobName == "securityofficer" then
-        fixed_apply_major_role(c, false)
+
+        fixed_apply_security(c)
 
     elseif jobName == "mechanic"
         or jobName == "engineer" then
+
         fixed_apply_engineer_role(c)
 
     elseif jobName == "assistant" then
+
         fixed_apply_assistant(c)
 
     else
+
         debug(
             "fixed unknown role: "
             .. tostring(jobName)

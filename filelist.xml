@@ -1,4 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<contentpackage name="NT Combat Casualty Generator" modversion="1.0.1" corepackage="False" steamworkshopid="3794745837" gameversion="1.13.4.0">
+<contentpackage name="NT Combat Casualty Generator" modversion="1.0.2" corepackage="False" steamworkshopid="3794745837" gameversion="1.13.4.0">
   <Item file="%ModDir%/Items/nt_casualty_trigger.xml" />
 </contentpackage>
