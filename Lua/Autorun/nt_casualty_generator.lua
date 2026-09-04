@@ -1188,6 +1188,242 @@ local function fixed_apply_role_injuries(c, jobName)
 end
 
 --------------------------------------------------
+-- 精确补足枪伤 / 出血直到血量归零
+--
+-- Character.Health 是只读的，不能直接赋值。
+-- 因此通过提高已有 gunshotwound + bleeding 的强度，
+-- 让 CharacterHealth 重新计算 Vitality。
+--
+-- 此函数必须在 c.Enabled = true 之前调用。
+--------------------------------------------------
+
+local FIXED_FINISH_LIMBS = {
+    LimbType.LeftArm,
+    LimbType.RightArm,
+    LimbType.LeftLeg,
+    LimbType.RightLeg,
+    LimbType.Torso
+}
+
+local FIXED_FINISH_MAX_ITERATIONS = 32
+
+local function fixed_finish_health(c)
+    if c == nil then
+        return
+    end
+
+    --------------------------------------------------
+    -- 记录当前固定伤势
+    --
+    -- 只对已经存在枪伤/出血的肢体进行加深。
+    -- 已截肢的肢体不再继续增加。
+    --------------------------------------------------
+
+    local wounds = {}
+
+    for _, limb in ipairs(FIXED_FINISH_LIMBS) do
+
+        local amputated = false
+
+        if NT.LimbIsAmputated ~= nil then
+            amputated = NT.LimbIsAmputated(c, limb)
+        end
+
+        if not amputated then
+
+            local gunshot =
+                HF.GetAfflictionStrengthLimb(
+                    c,
+                    limb,
+                    "gunshotwound",
+                    0
+                )
+
+            local bleeding =
+                HF.GetAfflictionStrengthLimb(
+                    c,
+                    limb,
+                    "bleeding",
+                    0
+                )
+
+            if gunshot > 0 or bleeding > 0 then
+
+                table.insert(
+                    wounds,
+                    {
+                        limb = limb,
+                        gunshot = gunshot,
+                        bleeding = bleeding
+                    }
+                )
+
+            end
+        end
+    end
+
+    if #wounds == 0 then
+        debug("fixed_finish_health: no existing gunshot/bleeding wounds")
+        return
+    end
+
+    --------------------------------------------------
+    -- 设置“额外伤势”
+    --
+    -- extra = 0:
+    --     恢复到当前固定伤势
+    --
+    -- extra > 0:
+    --     在原固定伤势基础上同时增加
+    --     gunshotwound 和 bleeding
+    --------------------------------------------------
+
+    local function apply_extra(extra)
+
+        for _, wound in ipairs(wounds) do
+
+            local newGunshot =
+                math.min(
+                    wound.gunshot + extra,
+                    100
+                )
+
+            local newBleeding =
+                math.min(
+                    wound.bleeding + extra,
+                    100
+                )
+
+            HF.SetAfflictionLimb(
+                c,
+                "gunshotwound",
+                wound.limb,
+                newGunshot
+            )
+
+            HF.SetAfflictionLimb(
+                c,
+                "bleeding",
+                wound.limb,
+                newBleeding
+            )
+        end
+    end
+
+    --------------------------------------------------
+    -- 当前固定伤势下的血量
+    --------------------------------------------------
+
+    local initialHealth = c.Health
+
+    if initialHealth <= 0 then
+        debug(string.format(
+            "fixed_finish_health: already empty health=%.6f",
+            initialHealth
+        ))
+        return
+    end
+
+    --------------------------------------------------
+    -- 找到一个一定能把血量压到 0 以下的 upper bound
+    --------------------------------------------------
+
+    local low = 0
+    local high = 1
+
+    apply_extra(high)
+
+    local safety = 0
+
+    while c.Health > 0
+        and high < 100
+        and safety < 20 do
+
+        high = math.min(
+            high * 2,
+            100
+        )
+
+        apply_extra(high)
+
+        safety = safety + 1
+    end
+
+    --------------------------------------------------
+    -- 连最大值都不够
+    --------------------------------------------------
+
+    if c.Health > 0 then
+
+        debug(string.format(
+            "fixed_finish_health: failed to reach zero, health=%.6f extra=%.2f",
+            c.Health,
+            high
+        ))
+
+        return
+    end
+
+    --------------------------------------------------
+    -- 二分搜索真正的死亡临界点
+    --
+    -- low  : Health > 0
+    -- high : Health <= 0
+    --------------------------------------------------
+
+    for _ = 1, FIXED_FINISH_MAX_ITERATIONS do
+
+        local mid =
+            (low + high) / 2
+
+        apply_extra(mid)
+
+        if c.Health > 0 then
+            low = mid
+        else
+            high = mid
+        end
+    end
+
+    --------------------------------------------------
+    -- low / high 各测试一次
+    -- 选择距离 0 最近的结果
+    --------------------------------------------------
+
+    apply_extra(low)
+
+    local lowHealth =
+        c.Health
+
+    apply_extra(high)
+
+    local highHealth =
+        c.Health
+
+    if math.abs(lowHealth) <= math.abs(highHealth) then
+
+        apply_extra(low)
+
+        debug(string.format(
+            "fixed_finish_health: final health=%.8f extra=%.8f",
+            c.Health,
+            low
+        ))
+
+    else
+
+        apply_extra(high)
+
+        debug(string.format(
+            "fixed_finish_health: final health=%.8f extra=%.8f",
+            c.Health,
+            high
+        ))
+
+    end
+end
+
+--------------------------------------------------
 -- 固定模式创建 NPC
 --------------------------------------------------
 
@@ -1268,9 +1504,13 @@ local function spawn_fixed_casualty(
         jobName
     )
 
-    --强制空血
-    c.Health = 0
+    --------------------------------------------------
+    -- 在固定伤势基础上继续加深枪伤 + 出血
+    -- 直到 Character.Health 接近 0
+    --------------------------------------------------
 
+    fixed_finish_health(c)
+    
     --所有人5%腹腔感染
     add(c, "infectedcavity", FIXED_INFECTED_CAVITY)
 
