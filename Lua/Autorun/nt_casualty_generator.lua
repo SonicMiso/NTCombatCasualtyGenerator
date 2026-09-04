@@ -11,52 +11,15 @@ local CASUALTY_COUNT = 5
 local TRIGGER_COOLDOWN = 0.75
 local nextTriggerTime = 0
 
--- 固定伤情模式独立冷却
+-- Fixed casualty mode has its own cooldown.
 local nextFixedTriggerTime = 0
 
 --------------------------------------------------
--- 固定伤情配置
+-- General configuration
 --------------------------------------------------
 
-local FIXED_EXTREMITY_GUNSHOT = 20
-local FIXED_EXTREMITY_BLEEDING = 30
-
-local FIXED_ASSISTANT_EXTREMITY_GUNSHOT = 10
-local FIXED_ASSISTANT_EXTREMITY_BLEEDING = 15
-
-local FIXED_TORSO_GUNSHOT = 30
-local FIXED_TORSO_BLEEDING = 50
-local FIXED_ASSISTANT_TORSO_BLEEDING = 40
-local FIXED_ENGINEER_TORSO_BLEEDING = 40
-
-local FIXED_FOREIGN_BODY = 30
-local FIXED_RIB_FRACTURE = 100
-local FIXED_ASSISTANT_RIB_FRACTURE = 30
-
-local FIXED_BLOODLOSS = 0
-local FIXED_INFECTED_CAVITY = 5
-local FIXED_HYPOXEMIA = 0
-local FIXED_CARDIAC_ARREST = 0
-local FIXED_SKULL_FRACTURE = 100
-local FIXED_AMPUTATION_FRACTURE = 100
-local FIXED_OTHER_LEG_FRACTURE = 100
-local FIXED_ARTERY_DAMAGE = 30
-
-local FIXED_FOREIGN_BODY = 30
-local FIXED_SECURITY_FOREIGN_BODY = 20
-local FIXED_ENGINEER_FOREIGN_BODY = 20
-
--- 机电只保留一个创伤性截肢，固定左腿。
-local FIXED_AMPUTATION_LIMB = LimbType.LeftLeg
-local FIXED_OTHER_LEG = LimbType.RightLeg
-
--- 主动脉破裂 identifier。若当前 Neurotrauma 版本使用不同 identifier，
--- 只需修改这一项，不影响其他固定伤情。
-local FIXED_AORTIC_RUPTURE_AFFLICTION = "aorticrupture"
-local FIXED_AORTIC_RUPTURE_STRENGTH = 0
-
--- NPC 横向排列间距
--- 约 1.5 个角色身高
+-- NPC horizontal spacing.
+-- Approximately 1.5 character heights.
 local SPAWN_SPACING = 150
 
 local ROLE_ORDER = {
@@ -76,13 +39,323 @@ local LIMB_POOL = {
     LimbType.Torso
 }
 
-local LIMB_CUT_FIX = 2
+--------------------------------------------------
+-- Fixed casualty configuration
+--------------------------------------------------
+
+local FIXED_INFECTED_CAVITY = 5
 
 --------------------------------------------------
--- 子弹伤害配置
+-- Fixed trauma profile support
+--------------------------------------------------
+
+local AMPUTATION_AFFLICTIONS = {
+    [LimbType.LeftArm] = "tla_amputation",
+    [LimbType.RightArm] = "tra_amputation",
+    [LimbType.LeftLeg] = "tll_amputation",
+    [LimbType.RightLeg] = "trl_amputation"
+}
+
+--------------------------------------------------
+-- Captain trauma profile
+--------------------------------------------------
+
+local CAPTAIN_TRAUMA_PROFILE = {
+
+    limbs = {
+
+        [LimbType.LeftArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.RightArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.LeftLeg] = {
+            gunshot = 20,
+            bleeding = 30,
+            foreignbody = 30,
+            artery = 30,
+            fracture = "ll_fracture",
+            fractureStrength = 100,
+            amputation = 100
+        },
+
+        [LimbType.RightLeg] = {
+            gunshot = 20,
+            bleeding = 30,
+            fracture = "rl_fracture",
+            fractureStrength = 100,
+            artery = 30
+        }
+    },
+
+    torso = {
+        gunshot = 30,
+        bleeding = 50,
+        foreignbody = 30
+    },
+
+    afflictions = {
+        {
+            identifier = "t_fracture",
+            strength = 100,
+            limb = LimbType.Torso
+        },
+
+        {
+            identifier = "hypoxemia",
+            strength = 0
+        },
+
+        {
+            identifier = "cardiacarrest",
+            strength = 0
+        },
+
+        {
+            identifier = "aorticrupture",
+            strength = 0,
+            limb = LimbType.Torso
+        }
+    }
+}
+
+--------------------------------------------------
+-- Security Officer trauma profile
+--------------------------------------------------
+
+local SECURITY_OFFICER_TRAUMA_PROFILE = {
+
+    limbs = {
+
+        [LimbType.LeftArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.RightArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.LeftLeg] = {
+            gunshot = 20,
+            bleeding = 30,
+            foreignbody = 20,
+            artery = 30,
+            fracture = "ll_fracture",
+            fractureStrength = 100,
+            amputation = 100
+        },
+
+        [LimbType.RightLeg] = {
+            gunshot = 20,
+            bleeding = 30,
+            fracture = "rl_fracture",
+            fractureStrength = 100,
+            artery = 30
+        }
+    },
+
+    torso = {
+        gunshot = 30,
+        bleeding = 50,
+        foreignbody = 20
+    },
+
+    afflictions = {
+        {
+            identifier = "t_fracture",
+            strength = 100,
+            limb = LimbType.Torso
+        },
+
+        {
+            identifier = "hypoxemia",
+            strength = 0
+        },
+
+        {
+            identifier = "cardiacarrest",
+            strength = 0
+        },
+
+        {
+            identifier = "h_fracture",
+            strength = 100
+        }
+    }
+}
+
+--------------------------------------------------
+-- Assistant trauma profile
+--------------------------------------------------
+
+local ASSISTANT_TRAUMA_PROFILE = {
+
+    limbs = {
+
+        [LimbType.LeftArm] = {
+            gunshot = 10,
+            bleeding = 15
+        },
+
+        [LimbType.RightArm] = {
+            gunshot = 10,
+            bleeding = 15
+        },
+
+        [LimbType.LeftLeg] = {
+            gunshot = 10,
+            bleeding = 15
+        },
+
+        [LimbType.RightLeg] = {
+            gunshot = 10,
+            bleeding = 15
+        }
+    },
+
+    torso = {
+        gunshot = 30,
+        bleeding = 40
+        -- No torso foreign body.
+    },
+
+    afflictions = {
+        {
+            identifier = "t_fracture",
+            strength = 30,
+            limb = LimbType.Torso
+        }
+    }
+}
+
+--------------------------------------------------
+-- Mechanic trauma profile
+--------------------------------------------------
+
+local MECHANIC_TRAUMA_PROFILE = {
+
+    limbs = {
+
+        [LimbType.LeftArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.RightArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.LeftLeg] = {
+            gunshot = 20,
+            bleeding = 30,
+            foreignbody = 20,
+            artery = 30,
+            fracture = "ll_fracture",
+            fractureStrength = 100,
+            amputation = 100
+        },
+
+        [LimbType.RightLeg] = {
+            gunshot = 20,
+            bleeding = 30
+        }
+    },
+
+    torso = {
+        gunshot = 30,
+        bleeding = 40,
+        foreignbody = 20
+    },
+
+    afflictions = {
+        {
+            identifier = "t_fracture",
+            strength = 100,
+            limb = LimbType.Torso
+        }
+    }
+}
+
+--------------------------------------------------
+-- Engineer trauma profile
+--------------------------------------------------
+
+local ENGINEER_TRAUMA_PROFILE = {
+
+    limbs = {
+
+        [LimbType.LeftArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.RightArm] = {
+            gunshot = 20,
+            bleeding = 30
+        },
+
+        [LimbType.LeftLeg] = {
+            gunshot = 20,
+            bleeding = 30,
+            foreignbody = 20,
+            artery = 30,
+            fracture = "ll_fracture",
+            fractureStrength = 100,
+            amputation = 100
+        },
+
+        [LimbType.RightLeg] = {
+            gunshot = 20,
+            bleeding = 30
+        }
+    },
+
+    torso = {
+        gunshot = 30,
+        bleeding = 40,
+        foreignbody = 20
+    },
+
+    afflictions = {
+        {
+            identifier = "t_fracture",
+            strength = 100,
+            limb = LimbType.Torso
+        }
+    }
+}
+
+--------------------------------------------------
+-- Profession -> fixed trauma profile
+--------------------------------------------------
+
+local FIXED_TRAUMA_PROFILES = {
+
+    captain = CAPTAIN_TRAUMA_PROFILE,
+
+    securityofficer = SECURITY_OFFICER_TRAUMA_PROFILE,
+
+    assistant = ASSISTANT_TRAUMA_PROFILE,
+
+    mechanic = MECHANIC_TRAUMA_PROFILE,
+
+    engineer = ENGINEER_TRAUMA_PROFILE
+}
+
+--------------------------------------------------
+-- Random bullet configuration
 --------------------------------------------------
 
 local BULLET_PROFILES = {
+
     {
         name = "hmg_light",
         base = 0.75,
@@ -108,11 +381,11 @@ local BULLET_PROFILES = {
         limb = 0.95,
         artery = 0.60,
         fragment = 0.55
-    },
+    }
 }
 
 --------------------------------------------------
--- 工具函数
+-- General utility functions
 --------------------------------------------------
 
 local function debug(msg)
@@ -122,7 +395,10 @@ local function debug(msg)
 end
 
 local function now()
-    if Timing ~= nil and Timing.TotalTime ~= nil then
+
+    if Timing ~= nil
+        and Timing.TotalTime ~= nil then
+
         return Timing.TotalTime
     end
 
@@ -130,8 +406,13 @@ local function now()
 end
 
 local function authoritative()
-    -- 多人游戏只允许服务器生成 NPC
-    if Game ~= nil and Game.IsMultiplayer then
+
+    -- Multiplayer:
+    -- only the server is allowed to generate casualties.
+
+    if Game ~= nil
+        and Game.IsMultiplayer then
+
         return SERVER == true
     end
 
@@ -155,42 +436,61 @@ local function pick(list)
 end
 
 --------------------------------------------------
--- Affliction
+-- Affliction utilities
 --------------------------------------------------
 
 local function hasAffliction(identifier)
+
     if AfflictionPrefab == nil
         or AfflictionPrefab.Prefabs == nil then
+
         return false
     end
 
-    local ok, prefab = pcall(function()
-        return AfflictionPrefab.Prefabs[identifier]
-    end)
+    local ok, prefab = pcall(
+        function()
+            return AfflictionPrefab.Prefabs[identifier]
+        end
+    )
 
     return ok and prefab ~= nil
 end
 
-local function add(c, identifier, strength, limb)
+local function add(
+    c,
+    identifier,
+    strength,
+    limb
+)
+
     if c == nil
         or strength == nil
         or strength <= 0 then
+
         return
     end
 
     if not hasAffliction(identifier) then
-        debug("missing affliction: " .. tostring(identifier))
+
+        debug(
+            "missing affliction: "
+            .. tostring(identifier)
+        )
+
         return
     end
 
     if limb ~= nil then
+
         HF.AddAfflictionLimb(
             c,
             identifier,
             limb,
             strength
         )
+
     else
+
         HF.AddAffliction(
             c,
             identifier,
@@ -200,7 +500,7 @@ local function add(c, identifier, strength, limb)
 end
 
 --------------------------------------------------
--- 四肢
+-- Extremity utilities
 --------------------------------------------------
 
 local EXTREMITIES = {
@@ -211,6 +511,7 @@ local EXTREMITIES = {
 }
 
 local function is_extremity(limb)
+
     return limb == LimbType.LeftArm
         or limb == LimbType.RightArm
         or limb == LimbType.LeftLeg
@@ -218,22 +519,15 @@ local function is_extremity(limb)
 end
 
 --------------------------------------------------
--- 截肢对应的 Neurotrauma Affliction
+-- Amputation state
 --------------------------------------------------
 
-local AMPUTATION_AFFLICTIONS = {
-    [LimbType.LeftArm] = "tla_amputation",
-    [LimbType.RightArm] = "tra_amputation",
-    [LimbType.LeftLeg] = "tll_amputation",
-    [LimbType.RightLeg] = "trl_amputation"
-}
-
---------------------------------------------------
--- 截肢状态
---------------------------------------------------
+local LIMB_CUT_FIX = 2
 
 local function new_amputation_state()
+
     return {
+
         count = 0,
 
         limbs = {
@@ -246,16 +540,18 @@ local function new_amputation_state()
 end
 
 --------------------------------------------------
--- 截肢
---
--- 截肢时：
--- 1. 添加对应 amputation Affliction
--- 2. 使用 NT.BreakLimb 添加骨折
--- 3. 记录已经截肢的肢体
+-- Amputation
 --------------------------------------------------
 
-local function amputate_limb(c, limb, state)
-    if c == nil or state == nil then
+local function amputate_limb(
+    c,
+    limb,
+    state
+)
+
+    if c == nil
+        or state == nil then
+
         return false
     end
 
@@ -271,15 +567,21 @@ local function amputate_limb(c, limb, state)
         return false
     end
 
-    local affliction = AMPUTATION_AFFLICTIONS[limb]
+    local affliction =
+        AMPUTATION_AFFLICTIONS[limb]
 
     if affliction == nil then
-        debug("missing amputation affliction for limb: " .. tostring(limb))
+
+        debug(
+            "missing amputation affliction for limb: "
+            .. tostring(limb)
+        )
+
         return false
     end
 
     --------------------------------------------------
-    -- 截肢
+    -- Traumatic amputation
     --------------------------------------------------
 
     add(
@@ -290,10 +592,11 @@ local function amputate_limb(c, limb, state)
     )
 
     --------------------------------------------------
-    -- 同时骨折
+    -- Fracture caused by amputation
     --------------------------------------------------
 
     if NT.BreakLimb ~= nil then
+
         NT.BreakLimb(
             c,
             limb
@@ -301,27 +604,34 @@ local function amputate_limb(c, limb, state)
     end
 
     --------------------------------------------------
-    -- 更新截肢状态
+    -- Update state
     --------------------------------------------------
 
     state.limbs[limb] = true
     state.count = state.count + 1
 
-    debug(string.format(
-        "amputation limb=%s count=%d/%d",
-        tostring(limb),
-        state.count,
-        LIMB_CUT_FIX
-    ))
+    debug(
+        string.format(
+            "amputation limb=%s count=%d/%d",
+            tostring(limb),
+            state.count,
+            LIMB_CUT_FIX
+        )
+    )
 
     return true
 end
 
 --------------------------------------------------
--- 外部枪伤
+-- Random external wound
 --------------------------------------------------
 
-local function external_wound(c, limb, severity)
+local function external_wound(
+    c,
+    limb,
+    severity
+)
+
     add(
         c,
         "gunshotwound",
@@ -345,10 +655,16 @@ local function external_wound(c, limb, severity)
 end
 
 --------------------------------------------------
--- 四肢枪伤
+-- Random extremity wound
 --------------------------------------------------
 
-local function extremity_wound(c, limb, severity, arterial)
+local function extremity_wound(
+    c,
+    limb,
+    severity,
+    arterial
+)
+
     external_wound(
         c,
         limb,
@@ -356,25 +672,7 @@ local function extremity_wound(c, limb, severity, arterial)
     )
 
     --------------------------------------------------
-    -- 骨折（ban)
-    --------------------------------------------------
-
-    -- if chance(
-    --     math.min(
-    --         0.12 + severity * 0.28,
-    --         0.85
-    --     )
-    -- ) then
-    --     if NT.BreakLimb ~= nil then
-    --         NT.BreakLimb(
-    --             c,
-    --             limb
-    --         )
-    --     end
-    -- end
-
-    --------------------------------------------------
-    -- 肢体内部损伤
+    -- Limb internal damage
     --------------------------------------------------
 
     add(
@@ -385,9 +683,7 @@ local function extremity_wound(c, limb, severity, arterial)
     )
 
     --------------------------------------------------
-    -- 动脉损伤
-    --
-    -- 使用 Neurotrauma 专用函数
+    -- Arterial damage
     --------------------------------------------------
 
     if arterial
@@ -402,10 +698,15 @@ local function extremity_wound(c, limb, severity, arterial)
 end
 
 --------------------------------------------------
--- 躯干枪伤
+-- Random torso wound
 --------------------------------------------------
 
-local function torso_wound(c, severity, isCaptain)
+local function torso_wound(
+    c,
+    severity,
+    isCaptain
+)
+
     external_wound(
         c,
         LimbType.Torso,
@@ -413,12 +714,12 @@ local function torso_wound(c, severity, isCaptain)
     )
 
     --------------------------------------------------
-    -- 内出血
-    --
-    -- 仅舰长
+    -- Internal bleeding
+    -- Captain only
     --------------------------------------------------
 
     if isCaptain then
+
         add(
             c,
             "internalbleeding",
@@ -427,17 +728,7 @@ local function torso_wound(c, severity, isCaptain)
     end
 
     --------------------------------------------------
-    -- 失血(ban)
-    --------------------------------------------------
-
-    -- add(
-    --     c,
-    --     "bloodloss",
-    --     randf(18.0, 50.0) * severity
-    -- )
-
-    --------------------------------------------------
-    -- 肺损伤
+    -- Lung damage
     --------------------------------------------------
 
     add(
@@ -446,33 +737,14 @@ local function torso_wound(c, severity, isCaptain)
         randf(10.0, 28.0) * severity,
         LimbType.Torso
     )
-
-    --------------------------------------------------
-    -- 气胸(ban)
-    --------------------------------------------------
-
-    -- add(
-    --     c,
-    --     "pneumothorax",
-    --     randf(3.0, 7.0) * severity
-    -- )
-
-    --------------------------------------------------
-    -- 缺氧（ban）
-    --------------------------------------------------
-
-    -- add(
-    --     c,
-    --     "hypoxemia",
-    --     randf(4.0, 15.0) * severity
-    -- )
 end
 
 --------------------------------------------------
--- 获取血量比例
+-- Get health
 --------------------------------------------------
 
 local function get_health_fraction(c)
+
     if c.Health ~= nil then
         return c.Health / 100.0
     end
@@ -481,7 +753,7 @@ local function get_health_fraction(c)
 end
 
 --------------------------------------------------
--- 随机枪击
+-- Random ballistic simulation
 --------------------------------------------------
 
 local function apply_random_ballistic(
@@ -491,26 +763,30 @@ local function apply_random_ballistic(
     amputationState,
     isCaptain
 )
-    -- 一次枪击
-    local hits = randi(1, 1)
+
+    local hits = 1
 
     for _ = 1, hits do
 
         local severity =
-            profile.base * randf(0.85, 1.35)
+            profile.base
+            * randf(0.85, 1.35)
 
         local limb =
-            impactLimb or pick(LIMB_POOL)
+            impactLimb
+            or pick(LIMB_POOL)
 
-        debug(string.format(
-            "ballistics %s limb=%s sev=%.2f",
-            profile.name,
-            tostring(limb),
-            severity
-        ))
+        debug(
+            string.format(
+                "ballistics %s limb=%s sev=%.2f",
+                profile.name,
+                tostring(limb),
+                severity
+            )
+        )
 
         --------------------------------------------------
-        -- 躯干
+        -- Torso
         --------------------------------------------------
 
         if limb == LimbType.Torso then
@@ -522,7 +798,7 @@ local function apply_random_ballistic(
             )
 
         --------------------------------------------------
-        -- 四肢 / 头部
+        -- Extremities / head
         --------------------------------------------------
 
         else
@@ -542,7 +818,7 @@ local function apply_random_ballistic(
             else
 
                 --------------------------------------------------
-                -- 头部
+                -- Head
                 --------------------------------------------------
 
                 external_wound(
@@ -560,7 +836,7 @@ local function apply_random_ballistic(
             end
 
             --------------------------------------------------
-            -- 碎片
+            -- Fragment
             --------------------------------------------------
 
             if chance(profile.fragment) then
@@ -582,9 +858,8 @@ local function apply_random_ballistic(
         end
 
         --------------------------------------------------
-        -- 通用内出血
-        --
-        -- 只有舰长
+        -- Generic internal bleeding
+        -- Captain only
         --------------------------------------------------
 
         if isCaptain
@@ -598,11 +873,7 @@ local function apply_random_ballistic(
         end
 
         --------------------------------------------------
-        -- 截肢判定
-        --
-        -- 只有四肢可以截肢
-        -- 已达到目标后不再计算
-        -- 已截肢肢体不重复计算
+        -- Random traumatic amputation
         --------------------------------------------------
 
         if is_extremity(limb)
@@ -620,18 +891,17 @@ local function apply_random_ballistic(
 
             if chance(severChance) then
 
-                debug(string.format(
-                    "sever limb=%s profile=%s sev=%.2f",
-                    tostring(limb),
-                    profile.name,
-                    severity
-                ))
-
-                --------------------------------------------------
-                -- 截肢前额外严重损伤
-                --------------------------------------------------
+                debug(
+                    string.format(
+                        "sever limb=%s profile=%s sev=%.2f",
+                        tostring(limb),
+                        profile.name,
+                        severity
+                    )
+                )
 
                 if NT.ArteryCutLimb ~= nil then
+
                     NT.ArteryCutLimb(
                         c,
                         limb,
@@ -646,10 +916,6 @@ local function apply_random_ballistic(
                     limb
                 )
 
-                --------------------------------------------------
-                -- 截肢 + 骨折
-                --------------------------------------------------
-
                 amputate_limb(
                     c,
                     limb,
@@ -661,7 +927,9 @@ local function apply_random_ballistic(
 end
 
 --------------------------------------------------
--- 持续增加枪伤直到死亡
+-- Random mode:
+-- continue adding gunshot wounds until vitality
+-- reaches zero
 --------------------------------------------------
 
 local function amplify_until_death(
@@ -671,6 +939,7 @@ local function amplify_until_death(
     amputationState,
     isCaptain
 )
+
     local safety = 0
 
     while c ~= nil
@@ -686,11 +955,13 @@ local function amplify_until_death(
             break
         end
 
-        debug(string.format(
-            "amplify %s health=%.2f",
-            profileName,
-            healthFrac
-        ))
+        debug(
+            string.format(
+                "amplify %s health=%.4f",
+                profileName,
+                healthFrac
+            )
+        )
 
         local impactLimb =
             pick(LIMB_POOL)
@@ -706,14 +977,17 @@ local function amplify_until_death(
 end
 
 --------------------------------------------------
--- 强制补足截肢
+-- Force minimum amputation count for random mode
 --------------------------------------------------
 
 local function force_amputation_to_target(
     c,
     state
 )
-    if c == nil or state == nil then
+
+    if c == nil
+        or state == nil then
+
         return
     end
 
@@ -722,7 +996,9 @@ local function force_amputation_to_target(
         local available = {}
 
         for _, limb in ipairs(EXTREMITIES) do
+
             if not state.limbs[limb] then
+
                 table.insert(
                     available,
                     limb
@@ -731,7 +1007,11 @@ local function force_amputation_to_target(
         end
 
         if #available == 0 then
-            debug("no available limb for forced amputation")
+
+            debug(
+                "no available limb for forced amputation"
+            )
+
             break
         end
 
@@ -747,13 +1027,14 @@ local function force_amputation_to_target(
 end
 
 --------------------------------------------------
--- 生成位置
+-- Spawn position
 --------------------------------------------------
 
 local function get_spawn_position(
     origin,
     index
 )
+
     local centerIndex =
         (CASUALTY_COUNT + 1) / 2
 
@@ -768,11 +1049,15 @@ local function get_spawn_position(
 end
 
 --------------------------------------------------
--- 根据名称寻找 Bullet Profile
+-- Get random bullet profile
 --------------------------------------------------
 
-local function get_bullet_profile(profileName)
+local function get_bullet_profile(
+    profileName
+)
+
     for _, profile in ipairs(BULLET_PROFILES) do
+
         if profile.name == profileName then
             return profile
         end
@@ -782,7 +1067,7 @@ local function get_bullet_profile(profileName)
 end
 
 --------------------------------------------------
--- 创建 NPC
+-- Spawn random casualty
 --------------------------------------------------
 
 local function spawn_casualty(
@@ -791,16 +1076,14 @@ local function spawn_casualty(
     profileName,
     sourceItem
 )
-    local nameSeed = string.format(
-        "NTCCG-%d-%d-%d",
-        math.floor(now() * 1000),
-        index,
-        randi(100000, 999999)
-    )
 
-    --------------------------------------------------
-    -- 保持原始 CharacterInfo API
-    --------------------------------------------------
+    local nameSeed =
+        string.format(
+            "NTCCG-%d-%d-%d",
+            math.floor(now() * 1000),
+            index,
+            randi(100000, 999999)
+        )
 
     local info =
         CharacterInfo(
@@ -817,6 +1100,7 @@ local function spawn_casualty(
         JobPrefab.Get(jobName)
 
     if jobPrefab == nil then
+
         debug(
             "missing job prefab: "
             .. tostring(jobName)
@@ -826,29 +1110,17 @@ local function spawn_casualty(
             JobPrefab.Get("assistant")
     end
 
-    --------------------------------------------------
-    -- 保持原始 Job API
-    --------------------------------------------------
-
     info.Job =
         Job(
             jobPrefab,
             false
         )
 
-    --------------------------------------------------
-    -- 固定横向排列
-    --------------------------------------------------
-
     local position =
         get_spawn_position(
             origin,
             index
         )
-
-    --------------------------------------------------
-    -- 保持原始 Character.Create API
-    --------------------------------------------------
 
     local c =
         Character.Create(
@@ -858,17 +1130,15 @@ local function spawn_casualty(
         )
 
     if c == nil then
+
         debug(
             "Character.Create returned nil"
         )
+
         return nil
     end
 
     c.Enabled = false
-
-    --------------------------------------------------
-    -- 保持原始 API
-    --------------------------------------------------
 
     c.GiveJobItems(false)
 
@@ -879,36 +1149,17 @@ local function spawn_casualty(
             CharacterTeamType.Team1
     end
 
-    --------------------------------------------------
-    -- Bullet Profile
-    --
-    -- 不再使用原来的
-    -- {"limb","torso","poly","critical","torso"}
-    --
-    -- 直接随机选择真正存在的 profile
-    --------------------------------------------------
-
     local profile =
-        get_bullet_profile(
-            profileName
-        )
-
-    --------------------------------------------------
-    -- 截肢状态
-    --------------------------------------------------
+        get_bullet_profile(profileName)
 
     local amputationState =
         new_amputation_state()
-
-    --------------------------------------------------
-    -- 舰长判断
-    --------------------------------------------------
 
     local isCaptain =
         jobName == "captain"
 
     --------------------------------------------------
-    -- 模拟枪伤
+    -- Simulate gunshot trauma
     --------------------------------------------------
 
     amplify_until_death(
@@ -920,7 +1171,7 @@ local function spawn_casualty(
     )
 
     --------------------------------------------------
-    -- 最终保证 2 个不同肢体截肢
+    -- Ensure target amputation count
     --------------------------------------------------
 
     force_amputation_to_target(
@@ -929,10 +1180,7 @@ local function spawn_casualty(
     )
 
     --------------------------------------------------
-    -- Rib Fracture
-    --
-    -- Assistt_ant 不添加
-    -- 其他职业都添加
+    -- Rib fracture
     --------------------------------------------------
 
     if jobName ~= "assistant" then
@@ -943,27 +1191,18 @@ local function spawn_casualty(
             100,
             LimbType.Torso
         )
-
-        debug(
-            "Rib Fracture added to "
-            .. tostring(c.Name)
-            .. " | role="
-            .. tostring(jobName)
-        )
     end
 
-    --------------------------------------------------
-    -- 最终状态
-    --------------------------------------------------
-
-    debug(string.format(
-        "spawned %s role=%s profile=%s amputations=%d/%d",
-        tostring(c.Name),
-        tostring(jobName),
-        tostring(profile.name),
-        amputationState.count,
-        LIMB_CUT_FIX
-    ))
+    debug(
+        string.format(
+            "spawned %s role=%s profile=%s amputations=%d/%d",
+            tostring(c.Name),
+            tostring(jobName),
+            tostring(profile.name),
+            amputationState.count,
+            LIMB_CUT_FIX
+        )
+    )
 
     c.Enabled = true
 
@@ -971,317 +1210,297 @@ local function spawn_casualty(
 end
 
 --------------------------------------------------
--- 固定伤情模式
+-- Fixed trauma profile:
+-- Apply limb trauma
 --------------------------------------------------
 
-local function fixed_add_extremity_wounds(c, gunshot, bleeding)
-    for _, limb in ipairs({
-        LimbType.LeftArm,
-        LimbType.RightArm,
-        LimbType.LeftLeg,
-        LimbType.RightLeg
-    }) do
-        add(c, "gunshotwound", gunshot, limb)
-        add(c, "bleeding", bleeding, limb)
-    end
-end
+local function apply_fixed_limb_trauma(
+    c,
+    limb,
+    trauma
+)
 
-local function fixed_add_torso_wounds(c, gunshot, bleeding, foreignBody)
-    add(c, "gunshotwound", gunshot, LimbType.Torso)
-    add(c, "bleeding", bleeding, LimbType.Torso)
-    if foreignBody ~= nil and foreignBody > 0 then
-        add(c, "foreignbody", foreignBody, LimbType.Torso)
-    end
-end
+    if c == nil
+        or trauma == nil then
 
-local function fixed_add_leg_fracture(c, limb, strength)
-    if limb == LimbType.LeftLeg then
-        add(c, "ll_fracture", strength, limb)
-    elseif limb == LimbType.RightLeg then
-        add(c, "rl_fracture", strength, limb)
-    end
-end
-
-local function fixed_add_artery_cut(c, limb)
-    if NT.ArteryCutLimb ~= nil then
-        NT.ArteryCutLimb(
-            c,
-            limb,
-            FIXED_ARTERY_DAMAGE
-        )
-    end
-end
-
-local function fixed_amputate_limb(c, limb)
-    local affliction = AMPUTATION_AFFLICTIONS[limb]
-
-    if affliction == nil then
-        debug(
-            "fixed missing amputation affliction: "
-            .. tostring(limb)
-        )
         return
     end
 
-    -- 创伤性截肢
-    add(c, affliction, 100, limb)
+    --------------------------------------------------
+    -- Gunshot wound
+    --------------------------------------------------
 
-    -- 截肢同时骨折 100
-    fixed_add_leg_fracture(
-        c,
-        limb,
-        FIXED_AMPUTATION_FRACTURE
-    )
+    if trauma.gunshot ~= nil then
 
-    -- 截肢部位异物 30
-    add(c, "foreignbody", FIXED_FOREIGN_BODY, limb)
+        add(
+            c,
+            "gunshotwound",
+            trauma.gunshot,
+            limb
+        )
+    end
 
-    -- 截肢部位动脉破裂
-    fixed_add_artery_cut(c, limb)
+    --------------------------------------------------
+    -- Bleeding
+    --------------------------------------------------
 
-    debug(
-        "fixed traumatic amputation limb="
-        .. tostring(limb)
-    )
-end
+    if trauma.bleeding ~= nil then
 
-local function fixed_add_other_leg_trauma(c)
-    -- 另一条腿：骨折 100 + 动脉破裂
-    fixed_add_leg_fracture(
-        c,
-        FIXED_OTHER_LEG,
-        FIXED_OTHER_LEG_FRACTURE
-    )
+        add(
+            c,
+            "bleeding",
+            trauma.bleeding,
+            limb
+        )
+    end
 
-    fixed_add_artery_cut(
-        c,
-        FIXED_OTHER_LEG
-    )
-end
+    --------------------------------------------------
+    -- Foreign body
+    --------------------------------------------------
 
---------------------------------------------------
--- 船长固定伤势
---------------------------------------------------
+    if trauma.foreignbody ~= nil then
 
-local function fixed_apply_captain(c)
+        add(
+            c,
+            "foreignbody",
+            trauma.foreignbody,
+            limb
+        )
+    end
 
-    -- 四肢：枪伤 20 / 出血 30
-    fixed_add_extremity_wounds(
-        c,
-        FIXED_EXTREMITY_GUNSHOT,
-        FIXED_EXTREMITY_BLEEDING
-    )
+    --------------------------------------------------
+    -- Fracture
+    --------------------------------------------------
 
-    -- 躯干：枪伤 30 / 出血 50 / 异物 30
-    fixed_add_torso_wounds(
-        c,
-        FIXED_TORSO_GUNSHOT,
-        FIXED_TORSO_BLEEDING,
-        FIXED_FOREIGN_BODY
-    )
+    if trauma.fracture ~= nil
+        and trauma.fractureStrength ~= nil then
 
-    -- 肋骨骨折 100
-    add(
-        c,
-        "t_fracture",
-        FIXED_RIB_FRACTURE,
-        LimbType.Torso
-    )
+        add(
+            c,
+            trauma.fracture,
+            trauma.fractureStrength,
+            limb
+        )
+    end
 
-    -- 低血氧
-    add(
-        c,
-        "hypoxemia",
-        FIXED_HYPOXEMIA
-    )
+    --------------------------------------------------
+    -- Arterial damage
+    --------------------------------------------------
 
-    -- 心脏骤停
-    add(
-        c,
-        "cardiacarrest",
-        FIXED_CARDIAC_ARREST
-    )
+    if trauma.artery ~= nil
+        and trauma.artery > 0 then
 
-    -- 左腿：创伤性截肢 + 骨折 + 动脉破裂 + 异物
-    fixed_amputate_limb(
-        c,
-        FIXED_AMPUTATION_LIMB
-    )
+        if NT.ArteryCutLimb ~= nil then
 
-    -- 右腿：骨折 + 动脉破裂
-    fixed_add_other_leg_trauma(c)
+            NT.ArteryCutLimb(
+                c,
+                limb,
+                trauma.artery
+            )
+        end
+    end
 
-    -- 船长不添加颅骨骨折
+    --------------------------------------------------
+    -- Traumatic amputation
+    --------------------------------------------------
 
-    -- 主动脉破裂
-    add(
-        c,
-        FIXED_AORTIC_RUPTURE_AFFLICTION,
-        FIXED_AORTIC_RUPTURE_STRENGTH,
-        LimbType.Torso
-    )
-end
+    if trauma.amputation ~= nil
+        and trauma.amputation > 0 then
 
+        local amputationAffliction =
+            AMPUTATION_AFFLICTIONS[limb]
 
---------------------------------------------------
--- 安全官固定伤势
---------------------------------------------------
+        if amputationAffliction ~= nil then
 
-local function fixed_apply_security(c)
+            add(
+                c,
+                amputationAffliction,
+                trauma.amputation,
+                limb
+            )
 
-    -- 四肢：枪伤 20 / 出血 30
-    fixed_add_extremity_wounds(
-        c,
-        FIXED_EXTREMITY_GUNSHOT,
-        FIXED_EXTREMITY_BLEEDING
-    )
+            if NT.BreakLimb ~= nil then
 
-    -- 躯干：枪伤 30 / 出血 50 / 异物 20
-    fixed_add_torso_wounds(
-        c,
-        FIXED_TORSO_GUNSHOT,
-        FIXED_TORSO_BLEEDING,
-        FIXED_SECURITY_FOREIGN_BODY
-    )
+                NT.BreakLimb(
+                    c,
+                    limb
+                )
+            end
 
-    -- 肋骨骨折 100
-    add(
-        c,
-        "t_fracture",
-        FIXED_RIB_FRACTURE,
-        LimbType.Torso
-    )
-
-    -- 低血氧
-    add(
-        c,
-        "hypoxemia",
-        FIXED_HYPOXEMIA
-    )
-
-    -- 心脏骤停
-    add(
-        c,
-        "cardiacarrest",
-        FIXED_CARDIAC_ARREST
-    )
-
-    -- 左腿：创伤性截肢 + 骨折 + 动脉破裂 + 异物
-    fixed_amputate_limb(
-        c,
-        FIXED_AMPUTATION_LIMB
-    )
-
-    -- 右腿：骨折 + 动脉破裂
-    fixed_add_other_leg_trauma(c)
-
-    -- 安全官保留颅骨骨折
-    add(
-        c,
-        "h_fracture",
-        FIXED_SKULL_FRACTURE
-    )
-end
-
-local function fixed_apply_engineer_role(c)
-    -- 四肢：枪伤 20 / 出血 30
-    fixed_add_extremity_wounds(
-        c,
-        FIXED_EXTREMITY_GUNSHOT,
-        FIXED_EXTREMITY_BLEEDING
-    )
-
-    -- 躯干：枪伤 30 / 出血 40 / 异物 30
-    fixed_add_torso_wounds(
-        c,
-        FIXED_TORSO_GUNSHOT,
-        FIXED_ENGINEER_TORSO_BLEEDING,
-        FIXED_ENGINEER_FOREIGN_BODY
-    )
-
-    -- 肋骨骨折 100
-    add(
-        c,
-        "t_fracture",
-        FIXED_RIB_FRACTURE,
-        LimbType.Torso
-    )
-
-    -- 仅一个创伤性截肢，固定左腿
-    fixed_amputate_limb(
-        c,
-        FIXED_AMPUTATION_LIMB
-    )
-end
-
-local function fixed_apply_assistant(c)
-    -- 四肢：枪伤 10 / 出血 15
-    fixed_add_extremity_wounds(
-        c,
-        FIXED_ASSISTANT_EXTREMITY_GUNSHOT,
-        FIXED_ASSISTANT_EXTREMITY_BLEEDING
-    )
-
-    -- 躯干：枪伤 30 / 出血 40 / 异物 30
-    fixed_add_torso_wounds(
-        c,
-        FIXED_ASSISTANT_TORSO_GUNSHOT,
-        FIXED_ASSISTANT_TORSO_BLEEDING,
-        nil
-    )
-
-    -- 肋骨骨折 30
-    add(
-        c,
-        "t_fracture",
-        FIXED_ASSISTANT_RIB_FRACTURE,
-        LimbType.Torso
-    )
+            debug(
+                "fixed traumatic amputation limb="
+                .. tostring(limb)
+            )
+        end
+    end
 end
 
 --------------------------------------------------
--- 根据职业应用固定伤势
+-- Fixed trauma profile:
+-- Apply torso trauma
 --------------------------------------------------
 
-local function fixed_apply_role_injuries(c, jobName)
+local function apply_fixed_torso_trauma(
+    c,
+    trauma
+)
 
-    if jobName == "captain" then
+    if c == nil
+        or trauma == nil then
 
-        fixed_apply_captain(c)
+        return
+    end
 
-    elseif jobName == "securityofficer" then
+    if trauma.gunshot ~= nil then
 
-        fixed_apply_security(c)
+        add(
+            c,
+            "gunshotwound",
+            trauma.gunshot,
+            LimbType.Torso
+        )
+    end
 
-    elseif jobName == "mechanic"
-        or jobName == "engineer" then
+    if trauma.bleeding ~= nil then
 
-        fixed_apply_engineer_role(c)
+        add(
+            c,
+            "bleeding",
+            trauma.bleeding,
+            LimbType.Torso
+        )
+    end
 
-    elseif jobName == "assistant" then
+    if trauma.foreignbody ~= nil then
 
-        fixed_apply_assistant(c)
-
-    else
-
-        debug(
-            "fixed unknown role: "
-            .. tostring(jobName)
+        add(
+            c,
+            "foreignbody",
+            trauma.foreignbody,
+            LimbType.Torso
         )
     end
 end
 
 --------------------------------------------------
--- 精确补足枪伤 / 出血直到血量归零
+-- Fixed trauma profile:
+-- Apply special / whole-body trauma
+--------------------------------------------------
+
+local function apply_fixed_profile_afflictions(
+    c,
+    afflictions
+)
+
+    if c == nil
+        or afflictions == nil then
+
+        return
+    end
+
+    for _, trauma in ipairs(afflictions) do
+
+        if trauma ~= nil
+            and trauma.identifier ~= nil
+            and trauma.strength ~= nil
+            and trauma.strength > 0 then
+
+            add(
+                c,
+                trauma.identifier,
+                trauma.strength,
+                trauma.limb
+            )
+        end
+    end
+end
+
+--------------------------------------------------
+-- Fixed trauma profile:
+-- Apply complete profile
+--------------------------------------------------
+
+local function apply_fixed_trauma_profile(
+    c,
+    profile
+)
+
+    if c == nil
+        or profile == nil then
+
+        return
+    end
+
+    --------------------------------------------------
+    -- Limbs
+    --------------------------------------------------
+
+    if profile.limbs ~= nil then
+
+        for limb, trauma in pairs(profile.limbs) do
+
+            apply_fixed_limb_trauma(
+                c,
+                limb,
+                trauma
+            )
+        end
+    end
+
+    --------------------------------------------------
+    -- Torso
+    --------------------------------------------------
+
+    if profile.torso ~= nil then
+
+        apply_fixed_torso_trauma(
+            c,
+            profile.torso
+        )
+    end
+
+    --------------------------------------------------
+    -- Additional afflictions
+    --------------------------------------------------
+
+    apply_fixed_profile_afflictions(
+        c,
+        profile.afflictions
+    )
+
+    --------------------------------------------------
+    -- Fixed infection
+    --------------------------------------------------
+
+    add(
+        c,
+        "infectedcavity",
+        FIXED_INFECTED_CAVITY
+    )
+end
+
+--------------------------------------------------
+-- Get fixed trauma profile
+--------------------------------------------------
+
+local function get_fixed_trauma_profile(
+    jobName
+)
+
+    return FIXED_TRAUMA_PROFILES[jobName]
+end
+
+--------------------------------------------------
+-- Fixed mode:
+-- Increase existing gunshot wounds and bleeding
+-- until Character.Health / Vitality reaches zero.
 --
--- Character.Health 是只读的，不能直接赋值。
--- 因此通过提高已有 gunshotwound + bleeding 的强度，
--- 让 CharacterHealth 重新计算 Vitality。
---
--- 此函数必须在 c.Enabled = true 之前调用。
+-- Character.Health is read-only, so this does NOT
+-- attempt to assign c.Health.
 --------------------------------------------------
 
 local FIXED_FINISH_LIMBS = {
+
     LimbType.LeftArm,
     LimbType.RightArm,
     LimbType.LeftLeg,
@@ -1292,15 +1511,13 @@ local FIXED_FINISH_LIMBS = {
 local FIXED_FINISH_MAX_ITERATIONS = 32
 
 local function fixed_finish_health(c)
+
     if c == nil then
         return
     end
 
     --------------------------------------------------
-    -- 记录当前固定伤势
-    --
-    -- 只对已经存在枪伤/出血的肢体进行加深。
-    -- 已截肢的肢体不再继续增加。
+    -- Record existing gunshot / bleeding values
     --------------------------------------------------
 
     local wounds = {}
@@ -1310,7 +1527,12 @@ local function fixed_finish_health(c)
         local amputated = false
 
         if NT.LimbIsAmputated ~= nil then
-            amputated = NT.LimbIsAmputated(c, limb)
+
+            amputated =
+                NT.LimbIsAmputated(
+                    c,
+                    limb
+                )
         end
 
         if not amputated then
@@ -1331,7 +1553,8 @@ local function fixed_finish_health(c)
                     0
                 )
 
-            if gunshot > 0 or bleeding > 0 then
+            if gunshot > 0
+                or bleeding > 0 then
 
                 table.insert(
                     wounds,
@@ -1341,28 +1564,26 @@ local function fixed_finish_health(c)
                         bleeding = bleeding
                     }
                 )
-
             end
         end
     end
 
     if #wounds == 0 then
-        debug("fixed_finish_health: no existing gunshot/bleeding wounds")
+
+        debug(
+            "fixed_finish_health: no existing gunshot/bleeding wounds"
+        )
+
         return
     end
 
     --------------------------------------------------
-    -- 设置“额外伤势”
-    --
-    -- extra = 0:
-    --     恢复到当前固定伤势
-    --
-    -- extra > 0:
-    --     在原固定伤势基础上同时增加
-    --     gunshotwound 和 bleeding
+    -- Apply extra damage to all existing wounds
     --------------------------------------------------
 
-    local function apply_extra(extra)
+    local function apply_extra(
+        extra
+    )
 
         for _, wound in ipairs(wounds) do
 
@@ -1395,21 +1616,25 @@ local function fixed_finish_health(c)
     end
 
     --------------------------------------------------
-    -- 当前固定伤势下的血量
+    -- Already dead
     --------------------------------------------------
 
     local initialHealth = c.Health
 
     if initialHealth <= 0 then
-        debug(string.format(
-            "fixed_finish_health: already empty health=%.6f",
-            initialHealth
-        ))
+
+        debug(
+            string.format(
+                "fixed_finish_health: already empty health=%.6f",
+                initialHealth
+            )
+        )
+
         return
     end
 
     --------------------------------------------------
-    -- 找到一个一定能把血量压到 0 以下的 upper bound
+    -- Find an upper bound
     --------------------------------------------------
 
     local low = 0
@@ -1423,10 +1648,11 @@ local function fixed_finish_health(c)
         and high < 100
         and safety < 20 do
 
-        high = math.min(
-            high * 2,
-            100
-        )
+        high =
+            math.min(
+                high * 2,
+                100
+            )
 
         apply_extra(high)
 
@@ -1434,25 +1660,30 @@ local function fixed_finish_health(c)
     end
 
     --------------------------------------------------
-    -- 连最大值都不够
+    -- Could not reach zero
     --------------------------------------------------
 
     if c.Health > 0 then
 
-        debug(string.format(
-            "fixed_finish_health: failed to reach zero, health=%.6f extra=%.2f",
-            c.Health,
-            high
-        ))
+        debug(
+            string.format(
+                "fixed_finish_health: failed to reach zero health=%.6f extra=%.2f",
+                c.Health,
+                high
+            )
+        )
 
         return
     end
 
     --------------------------------------------------
-    -- 二分搜索真正的死亡临界点
+    -- Binary search the death boundary
     --
-    -- low  : Health > 0
-    -- high : Health <= 0
+    -- low:
+    --     Health > 0
+    --
+    -- high:
+    --     Health <= 0
     --------------------------------------------------
 
     for _ = 1, FIXED_FINISH_MAX_ITERATIONS do
@@ -1463,15 +1694,17 @@ local function fixed_finish_health(c)
         apply_extra(mid)
 
         if c.Health > 0 then
+
             low = mid
+
         else
+
             high = mid
         end
     end
 
     --------------------------------------------------
-    -- low / high 各测试一次
-    -- 选择距离 0 最近的结果
+    -- Choose the value closest to zero
     --------------------------------------------------
 
     apply_extra(low)
@@ -1484,31 +1717,35 @@ local function fixed_finish_health(c)
     local highHealth =
         c.Health
 
-    if math.abs(lowHealth) <= math.abs(highHealth) then
+    if math.abs(lowHealth)
+        <= math.abs(highHealth) then
 
         apply_extra(low)
 
-        debug(string.format(
-            "fixed_finish_health: final health=%.8f extra=%.8f",
-            c.Health,
-            low
-        ))
+        debug(
+            string.format(
+                "fixed_finish_health: final health=%.8f extra=%.8f",
+                c.Health,
+                low
+            )
+        )
 
     else
 
         apply_extra(high)
 
-        debug(string.format(
-            "fixed_finish_health: final health=%.8f extra=%.8f",
-            c.Health,
-            high
-        ))
-
+        debug(
+            string.format(
+                "fixed_finish_health: final health=%.8f extra=%.8f",
+                c.Health,
+                high
+            )
+        )
     end
 end
 
 --------------------------------------------------
--- 固定模式创建 NPC
+-- Spawn fixed casualty
 --------------------------------------------------
 
 local function spawn_fixed_casualty(
@@ -1516,93 +1753,146 @@ local function spawn_fixed_casualty(
     index,
     sourceItem
 )
-    local nameSeed = string.format(
-        "NTCCG-Fixed-%d-%d-%d",
-        math.floor(now() * 1000),
-        index,
-        randi(100000, 999999)
-    )
 
-    -- 保持原始 CharacterInfo API
-    local info = CharacterInfo(
-        "human",
-        nameSeed
-    )
+    local nameSeed =
+        string.format(
+            "NTCCG-Fixed-%d-%d-%d",
+            math.floor(now() * 1000),
+            index,
+            randi(100000, 999999)
+        )
+
+    --------------------------------------------------
+    -- Character info
+    --------------------------------------------------
+
+    local info =
+        CharacterInfo(
+            "human",
+            nameSeed
+        )
 
     local jobName =
         ROLE_ORDER[
             ((index - 1) % #ROLE_ORDER) + 1
         ]
 
+    --------------------------------------------------
+    -- Job
+    --------------------------------------------------
+
     local jobPrefab =
         JobPrefab.Get(jobName)
 
     if jobPrefab == nil then
+
         debug(
             "missing job prefab: "
             .. tostring(jobName)
         )
+
         jobPrefab =
             JobPrefab.Get("assistant")
     end
 
-    -- 保持原始 Job API
-    info.Job = Job(
-        jobPrefab,
-        false
-    )
+    info.Job =
+        Job(
+            jobPrefab,
+            false
+        )
 
-    -- 与旧模式相同的固定横向排列
+    --------------------------------------------------
+    -- Spawn position
+    --------------------------------------------------
+
     local position =
         get_spawn_position(
             origin,
             index
         )
 
-    -- 保持原始 Character.Create API
-    local c = Character.Create(
-        info,
-        position,
-        info.Name
-    )
+    --------------------------------------------------
+    -- Create character
+    --------------------------------------------------
+
+    local c =
+        Character.Create(
+            info,
+            position,
+            info.Name
+        )
 
     if c == nil then
+
         debug(
             "Character.Create returned nil (fixed)"
         )
+
         return nil
     end
 
+    --------------------------------------------------
+    -- Keep disabled while injuries are applied
+    --------------------------------------------------
+
     c.Enabled = false
 
-    -- 保持原始 API
     c.GiveJobItems(false)
 
     if CharacterTeamType ~= nil
         and CharacterTeamType.Team1 ~= nil then
-        c.TeamID = CharacterTeamType.Team1
+
+        c.TeamID =
+            CharacterTeamType.Team1
     end
 
-    fixed_apply_role_injuries(
-        c,
-        jobName
-    )
+    --------------------------------------------------
+    -- Get independent profession trauma profile
+    --------------------------------------------------
+
+    local traumaProfile =
+        get_fixed_trauma_profile(
+            jobName
+        )
+
+    if traumaProfile == nil then
+
+        debug(
+            "missing fixed trauma profile for role="
+            .. tostring(jobName)
+        )
+
+    else
+
+        apply_fixed_trauma_profile(
+            c,
+            traumaProfile
+        )
+    end
 
     --------------------------------------------------
-    -- 在固定伤势基础上继续加深枪伤 + 出血
-    -- 直到 Character.Health 接近 0
+    -- Bring vitality to zero by increasing the
+    -- existing gunshot wounds and bleeding.
     --------------------------------------------------
 
     fixed_finish_health(c)
-    
-    --所有人5%腹腔感染
-    add(c, "infectedcavity", FIXED_INFECTED_CAVITY)
 
-    debug(string.format(
-        "fixed spawned %s role=%s",
-        tostring(c.Name),
-        tostring(jobName)
-    ))
+    --------------------------------------------------
+    -- Debug final state
+    --------------------------------------------------
+
+    debug(
+        string.format(
+            "fixed spawned %s role=%s health=%.8f",
+            tostring(c.Name),
+            tostring(jobName),
+            c.Health
+        )
+    )
+
+    --------------------------------------------------
+    -- Enable NPC
+    --------------------------------------------------
 
     c.Enabled = true
 
@@ -1610,116 +1900,142 @@ local function spawn_fixed_casualty(
 end
 
 --------------------------------------------------
--- 固定伤情模式生成
+-- Generate fixed casualties
 --------------------------------------------------
 
 local function generate_fixed(
     origin,
     sourceItem
 )
+
     if not authoritative() then
+
         debug(
             "skip fixed generate: not authoritative"
         )
+
         return
     end
 
     if now() < nextFixedTriggerTime then
-        debug(string.format(
-            "skip fixed generate: cooldown %.2f < %.2f",
-            now(),
-            nextFixedTriggerTime
-        ))
+
+        debug(
+            string.format(
+                "skip fixed generate: cooldown %.2f < %.2f",
+                now(),
+                nextFixedTriggerTime
+            )
+        )
+
         return
     end
 
     nextFixedTriggerTime =
         now() + TRIGGER_COOLDOWN
 
-    debug(string.format(
-        "fixed generate item=%s pos=(%.1f, %.1f) id=%s",
-        sourceItem ~= nil
-            and sourceItem.Prefab ~= nil
-            and sourceItem.Prefab.Identifier ~= nil
-            and tostring(sourceItem.Prefab.Identifier.Value)
-            or "nil",
-        origin.X,
-        origin.Y,
-        sourceItem ~= nil
-            and tostring(sourceItem.ID)
-            or "nil"
-    ))
+    debug(
+        string.format(
+            "fixed generate item=%s pos=(%.1f, %.1f) id=%s",
+            sourceItem ~= nil
+                and sourceItem.Prefab ~= nil
+                and sourceItem.Prefab.Identifier ~= nil
+                and tostring(
+                    sourceItem.Prefab.Identifier.Value
+                )
+                or "nil",
+
+            origin.X,
+            origin.Y,
+
+            sourceItem ~= nil
+                and tostring(sourceItem.ID)
+                or "nil"
+        )
+    )
 
     local spawned = 0
 
     for i = 1, CASUALTY_COUNT do
+
         if spawn_fixed_casualty(
             origin,
             i,
             sourceItem
         ) ~= nil then
-            spawned = spawned + 1
+
+            spawned =
+                spawned + 1
         end
     end
 
-    print(string.format(
-        "[NTCCG] Fixed generated %d/%d casualties at (%.0f, %.0f).",
-        spawned,
-        CASUALTY_COUNT,
-        origin.X,
-        origin.Y
-    ))
+    print(
+        string.format(
+            "[NTCCG] Fixed generated %d/%d casualties at (%.0f, %.0f).",
+            spawned,
+            CASUALTY_COUNT,
+            origin.X,
+            origin.Y
+        )
+    )
 end
 
 --------------------------------------------------
--- 生成全部 NPC
+-- Generate random casualties
 --------------------------------------------------
 
-local function generate(origin, sourceItem)
+local function generate(
+    origin,
+    sourceItem
+)
+
     if not authoritative() then
+
         debug(
             "skip generate: not authoritative"
         )
+
         return
     end
 
     if now() < nextTriggerTime then
-        debug(string.format(
-            "skip generate: cooldown %.2f < %.2f",
-            now(),
-            nextTriggerTime
-        ))
+
+        debug(
+            string.format(
+                "skip generate: cooldown %.2f < %.2f",
+                now(),
+                nextTriggerTime
+            )
+        )
+
         return
     end
 
     nextTriggerTime =
         now() + TRIGGER_COOLDOWN
 
-    debug(string.format(
-        "generate item=%s pos=(%.1f, %.1f) id=%s",
-        sourceItem ~= nil
-            and sourceItem.Prefab ~= nil
-            and sourceItem.Prefab.Identifier ~= nil
-            and tostring(sourceItem.Prefab.Identifier.Value)
-            or "nil",
-        origin.X,
-        origin.Y,
-        sourceItem ~= nil
-            and tostring(sourceItem.ID)
-            or "nil"
-    ))
+    debug(
+        string.format(
+            "generate item=%s pos=(%.1f, %.1f) id=%s",
+            sourceItem ~= nil
+                and sourceItem.Prefab ~= nil
+                and sourceItem.Prefab.Identifier ~= nil
+                and tostring(
+                    sourceItem.Prefab.Identifier.Value
+                )
+                or "nil",
 
-    --------------------------------------------------
-    -- 不再使用原来的 profiles 数组
-    --------------------------------------------------
+            origin.X,
+            origin.Y,
+
+            sourceItem ~= nil
+                and tostring(sourceItem.ID)
+                or "nil"
+        )
+    )
 
     local spawned = 0
 
     for i = 1, CASUALTY_COUNT do
-
-        --------------------------------------------------
-        -- 直接从真实 Bullet Profile 中随机选择
-        --------------------------------------------------
 
         local profile =
             pick(BULLET_PROFILES)
@@ -1736,19 +2052,19 @@ local function generate(origin, sourceItem)
         end
     end
 
-    print(string.format(
-        "[NTCCG] Generated %d/%d casualties at (%.0f, %.0f).",
-        spawned,
-        CASUALTY_COUNT,
-        origin.X,
-        origin.Y
-    ))
+    print(
+        string.format(
+            "[NTCCG] Generated %d/%d casualties at (%.0f, %.0f).",
+            spawned,
+            CASUALTY_COUNT,
+            origin.X,
+            origin.Y
+        )
+    )
 end
 
 --------------------------------------------------
 -- Revolver Hook
---
--- 保持原始 Hook 和参数
 --------------------------------------------------
 
 Hook.Add(
@@ -1759,6 +2075,7 @@ Hook.Add(
         deltaTime,
         item
     )
+
         if item == nil
             or item.Prefab == nil
             or item.Prefab.Identifier == nil then
@@ -1770,25 +2087,31 @@ Hook.Add(
             return
         end
 
-        debug(string.format(
-            "lua hook item=%s delta=%.3f",
-            tostring(
-                item.Prefab.Identifier.Value
-            ),
-            deltaTime or -1
-        ))
+        debug(
+            string.format(
+                "lua hook item=%s delta=%.3f",
+                tostring(
+                    item.Prefab.Identifier.Value
+                ),
+                deltaTime or -1
+            )
+        )
 
         if item.WorldPosition == nil then
+
             debug(
                 "lua hook aborted: item.WorldPosition is nil"
             )
+
             return
         end
 
         if not authoritative() then
+
             debug(
                 "lua hook ignored on non-authoritative side"
             )
+
             return
         end
 
@@ -1800,10 +2123,12 @@ Hook.Add(
 
         Timer.Wait(
             function()
+
                 generate(
                     pos,
                     item
                 )
+
             end,
             50
         )
@@ -1812,9 +2137,6 @@ Hook.Add(
 
 --------------------------------------------------
 -- Fixed Revolver Hook
---
--- 与旧 Hook 独立：只触发固定伤情模式
--- 参数形式保持与原 Hook 一致
 --------------------------------------------------
 
 Hook.Add(
@@ -1825,6 +2147,7 @@ Hook.Add(
         deltaTime,
         item
     )
+
         if item == nil
             or item.Prefab == nil
             or item.Prefab.Identifier == nil then
@@ -1836,25 +2159,31 @@ Hook.Add(
             return
         end
 
-        debug(string.format(
-            "fixed lua hook item=%s delta=%.3f",
-            tostring(
-                item.Prefab.Identifier.Value
-            ),
-            deltaTime or -1
-        ))
+        debug(
+            string.format(
+                "fixed lua hook item=%s delta=%.3f",
+                tostring(
+                    item.Prefab.Identifier.Value
+                ),
+                deltaTime or -1
+            )
+        )
 
         if item.WorldPosition == nil then
+
             debug(
                 "fixed lua hook aborted: item.WorldPosition is nil"
             )
+
             return
         end
 
         if not authoritative() then
+
             debug(
                 "fixed lua hook ignored on non-authoritative side"
             )
+
             return
         end
 
@@ -1866,10 +2195,12 @@ Hook.Add(
 
         Timer.Wait(
             function()
+
                 generate_fixed(
                     pos,
                     item
                 )
+
             end,
             50
         )
