@@ -1,0 +1,277 @@
+print("[NTCCG] Autorun loaded.")
+
+if NT == nil or HF == nil then
+    print("[NTCCG] Neurotrauma was not found. This mod requires Neurotrauma.")
+    return
+end
+
+local debugEnabled = true
+local CASUALTY_COUNT = 5
+local TRIGGER_COOLDOWN = 0.75
+local nextTriggerTime = 0
+local SPAWN_RADIUS = 14.0
+local ROLE_ORDER = { "captain", "securityofficer", "assistant", "mechanic", "engineer" }
+local LIMB_POOL = {
+    LimbType.LeftArm,
+    LimbType.RightArm,
+    LimbType.LeftLeg,
+    LimbType.RightLeg,
+    LimbType.Head,
+    LimbType.Torso
+}
+local BULLET_PROFILES = {
+    { name = "hmg_light", base = 0.75, internal = 0.55, limb = 0.55, artery = 0.30, fragment = 0.20 },
+    { name = "hmg_standard", base = 1.00, internal = 0.90, limb = 0.75, artery = 0.45, fragment = 0.35 },
+    { name = "hmg_heavy", base = 1.25, internal = 1.10, limb = 0.95, artery = 0.60, fragment = 0.55 },
+}
+
+local function debug(msg)
+    if debugEnabled then
+        print("[NTCCG][DEBUG] " .. msg)
+    end
+end
+
+local function now()
+    if Timing ~= nil and Timing.TotalTime ~= nil then
+        return Timing.TotalTime
+    end
+    return os.clock()
+end
+
+local function authoritative()
+    -- In multiplayer, spawn only on the server to avoid client-side local
+    -- Character.Create calls that conflict with replicated network spawns.
+    if Game ~= nil and Game.IsMultiplayer then
+        return SERVER == true
+    end
+    return true
+end
+
+local function randf(a, b)
+    return a + (b - a) * math.random()
+end
+
+local function randi(a, b)
+    return math.random(a, b)
+end
+
+local function chance(p)
+    return math.random() < p
+end
+
+local function pick(list)
+    return list[randi(1, #list)]
+end
+
+local function hasAffliction(identifier)
+    if AfflictionPrefab == nil or AfflictionPrefab.Prefabs == nil then
+        return false
+    end
+    local ok, prefab = pcall(function()
+        return AfflictionPrefab.Prefabs[identifier]
+    end)
+    return ok and prefab ~= nil
+end
+
+local function add(c, identifier, strength, limb)
+    if c == nil or strength == nil or strength <= 0 then return end
+    if not hasAffliction(identifier) then
+        debug("missing affliction: " .. tostring(identifier))
+        return
+    end
+    if limb ~= nil then
+        HF.AddAfflictionLimb(c, identifier, limb, strength)
+    else
+        HF.AddAffliction(c, identifier, strength)
+    end
+end
+
+local EXTREMITIES = {
+    LimbType.LeftArm,
+    LimbType.RightArm,
+    LimbType.LeftLeg,
+    LimbType.RightLeg
+}
+
+local function external_wound(c, limb, severity)
+    add(c, "gunshotwound", randf(4.0, 10.0) * severity, limb)
+    add(c, "bleeding", randf(6.0, 18.0) * severity, limb)
+    add(c, "foreignbody", randf(2.5, 9.0) * severity, limb)
+end
+
+local function extremity_wound(c, limb, severity, arterial)
+    external_wound(c, limb, severity)
+    if chance(math.min(0.12 + severity * 0.28, 0.85)) and NT.BreakLimb ~= nil then
+        NT.BreakLimb(c, limb)
+    end
+    add(c, "internaldamage", randf(10.0, 28.0) * severity, limb)
+    if arterial and NT.ArteryCutLimb ~= nil then
+        NT.ArteryCutLimb(c, limb, randf(4.5, 9.0) * severity)
+    end
+end
+
+local function torso_wound(c, severity)
+    external_wound(c, LimbType.Torso, severity)
+    add(c, "internalbleeding", randf(18.0, 42.0) * severity)
+    add(c, "organdamage", randf(7.0, 20.0) * severity, LimbType.Torso)
+    add(c, "bloodloss", randf(18.0, 50.0) * severity)
+    add(c, "lungdamage", randf(10.0, 28.0) * severity, LimbType.Torso)
+    add(c, "pneumothorax", randf(3.0, 7.0) * severity)
+    add(c, "hypoxemia", randf(4.0, 15.0) * severity)
+end
+
+local function get_health_fraction(c)
+    if c.Health ~= nil then
+        return c.Health / 100.0
+    end
+    return 1.0
+end
+
+local function apply_random_ballistic(c, profile, impactLimb)
+    -- Model one shot as a small burst of sub-impacts so the wound pattern can
+    -- branch into penetration, fragmentation, and limb severance outcomes.
+    local hits = randi(1, 1)
+    for _ = 1, hits do
+        local severity = profile.base * randf(0.85, 1.35)
+        local limb = impactLimb or pick(LIMB_POOL)
+        debug(string.format("ballistics %s limb=%s sev=%.2f", profile.name, tostring(limb), severity))
+
+        if limb == LimbType.Torso then
+            torso_wound(c, severity)
+        else
+            local arterial = chance(profile.artery)
+            extremity_wound(c, limb, severity, arterial)
+            if chance(profile.fragment) then
+                add(c, "foreignbody", randf(3.0, 10.0) * severity, limb)
+                add(c, "internaldamage", randf(6.0, 16.0) * severity, limb)
+            end
+        end
+
+        if chance(0.25 * profile.internal) then
+            add(c, "internalbleeding", randf(8.0, 20.0) * severity)
+        end
+        local severChance = math.min(0.08 + severity * 0.18 + profile.fragment * 0.10, 0.78)
+        if limb == LimbType.Torso then
+            severChance = severChance * 0.15
+        elseif limb == LimbType.Head then
+            severChance = severChance * 0.3
+        end
+        if chance(severChance) then
+            debug(string.format("sever limb=%s profile=%s sev=%.2f", tostring(limb), profile.name, severity))
+            if NT.BreakLimb ~= nil then
+                NT.BreakLimb(c, limb)
+            end
+            if limb == LimbType.LeftArm or limb == LimbType.RightArm or limb == LimbType.LeftLeg or limb == LimbType.RightLeg then
+                if NT.ArteryCutLimb ~= nil then
+                    NT.ArteryCutLimb(c, limb, randf(18.0, 30.0) * severity)
+                end
+                add(c, "internaldamage", randf(12.0, 24.0) * severity, limb)
+            end
+        end
+    end
+end
+
+local function amplify_until_death(c, profileName, profile)
+    local safety = 0
+    while c ~= nil and c.Removed ~= true and safety < 100 do
+        safety = safety + 1
+        local healthFrac = get_health_fraction(c)
+        if healthFrac <= 0 then break end
+
+        debug(string.format(
+            "amplify %s health=%.2f",
+            profileName,
+            healthFrac
+        ))
+        local impactLimb = pick(LIMB_POOL)
+        apply_random_ballistic(c, profile, impactLimb)
+    end
+end
+
+local function spawn_casualty(origin, index, profileName, sourceItem)
+    local nameSeed = string.format("NTCCG-%d-%d-%d", math.floor(now() * 1000), index, randi(100000, 999999))
+
+    -- Match the public example pattern: CharacterInfo + Character.Create(info,...)
+    -- to avoid overload ambiguity from the long species-name signature.
+    local info = CharacterInfo("human", nameSeed)
+    local jobName = ROLE_ORDER[((index - 1) % #ROLE_ORDER) + 1]
+    local jobPrefab = JobPrefab.Get(jobName)
+    if jobPrefab == nil then
+        debug("missing job prefab: " .. tostring(jobName))
+        jobPrefab = JobPrefab.Get("assistant")
+    end
+    info.Job = Job(jobPrefab, false)
+    local position = Vector2(origin.X + randf(-SPAWN_RADIUS, SPAWN_RADIUS), origin.Y + randf(-SPAWN_RADIUS, SPAWN_RADIUS))
+    local c = Character.Create(info, position, info.Name)
+    c.Enabled = false
+    c.GiveJobItems(false)
+    if c == nil then
+        debug("Character.Create returned nil")
+        return nil
+    end
+    if CharacterTeamType ~= nil and CharacterTeamType.Team1 ~= nil then
+        c.TeamID = CharacterTeamType.Team1
+    end
+
+    local profile = BULLET_PROFILES[randi(1, #BULLET_PROFILES)]
+
+    amplify_until_death(c, profileName, profile)
+    c.Enabled = true
+    return c
+end
+
+local function generate(origin, sourceItem)
+    if not authoritative() then
+        debug("skip generate: not authoritative")
+        return
+    end
+    if now() < nextTriggerTime then
+        debug(string.format("skip generate: cooldown %.2f < %.2f", now(), nextTriggerTime))
+        return
+    end
+    nextTriggerTime = now() + TRIGGER_COOLDOWN
+
+    debug(string.format(
+        "generate item=%s pos=(%.1f, %.1f) id=%s",
+        sourceItem ~= nil and sourceItem.Prefab ~= nil and sourceItem.Prefab.Identifier ~= nil and tostring(sourceItem.Prefab.Identifier.Value) or "nil",
+        origin.X, origin.Y,
+        sourceItem ~= nil and tostring(sourceItem.ID) or "nil"
+    ))
+
+    local profiles = { "limb", "torso", "poly", "critical", "torso" }
+    for i = #profiles, 2, -1 do
+        local j = randi(1, i)
+        profiles[i], profiles[j] = profiles[j], profiles[i]
+    end
+
+    local spawned = 0
+    for i = 1, CASUALTY_COUNT do
+        if spawn_casualty(origin, i, profiles[i], sourceItem) ~= nil then
+            spawned = spawned + 1
+        end
+    end
+
+    print(string.format("[NTCCG] Generated %d/%d casualties at (%.0f, %.0f).", spawned, CASUALTY_COUNT, origin.X, origin.Y))
+end
+
+Hook.Add("ntccg.revolver.onUse", "NTCCG.RevolverOnUse", function(statusEffect, deltaTime, item)
+    if item == nil or item.Prefab == nil or item.Prefab.Identifier == nil then
+        debug("lua hook fired with nil item")
+        return
+    end
+    debug(string.format("lua hook item=%s delta=%.3f", tostring(item.Prefab.Identifier.Value), deltaTime or -1))
+    if item.WorldPosition == nil then
+        debug("lua hook aborted: item.WorldPosition is nil")
+        return
+    end
+    if not authoritative() then
+        debug("lua hook ignored on non-authoritative side")
+        return
+    end
+    local pos = Vector2(item.WorldPosition.X, item.WorldPosition.Y)
+    Timer.Wait(function()
+        generate(pos, item)
+    end, 50)
+end)
+
+print("[NTCCG] Loaded. LuaHook armed for NT Combat Casualty Revolver.")
