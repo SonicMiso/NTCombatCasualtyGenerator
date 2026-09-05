@@ -61,23 +61,25 @@ local AMPUTATION_AFFLICTIONS = {
 --------------------------------------------------
 
 local CAPTAIN_TRAUMA_PROFILE = {
-
+    final_health = -10,
     limbs = {
-
-        [LimbType.LeftArm] = {
-            gunshot = 20,
-            bleeding = 30
+         [LimbType.LeftArm] = {
+            gunshot = { min = 0, max = 0 },
+            bleeding = { min = 15, max = 25 }
         },
 
         [LimbType.RightArm] = {
-            gunshot = 20,
-            bleeding = 30
+            gunshot = { min = 0, max = 0 },
+            bleeding = { min = 15, max = 25 }
         },
-
+        [LimbType.Head] = {
+            gunshot = { min = 0, max = 0 },
+            bleeding = { min = 15, max = 25 }
+        },
         [LimbType.LeftLeg] = {
-            gunshot = 30,
-            bleeding = 50,
-            foreignbody = 30,
+            gunshot = { min = 60, max = 80 },
+            bleeding = { min = 60, max = 70 },
+            foreignbody = { min = 30, max = 35 },
             artery = 30,
             fracture = "ll_fracture",
             fractureStrength = 100,
@@ -85,9 +87,9 @@ local CAPTAIN_TRAUMA_PROFILE = {
         },
 
         [LimbType.RightLeg] = {
-            gunshot = 30,
-            bleeding = 50,
-            foreignbody = 30,
+            gunshot = { min = 40, max = 60 },
+            bleeding = { min = 50, max = 60 },
+            foreignbody = { min = 25, max = 30 },
             fracture = "rl_fracture",
             fractureStrength = 100,
             artery = 30
@@ -95,31 +97,15 @@ local CAPTAIN_TRAUMA_PROFILE = {
     },
 
     torso = {
-        gunshot = 30,
-        bleeding = 50,
-        foreignbody = 30
+        gunshot = { min = 50, max = 70 },
+        bleeding = { min = 20, max = 30 },
+        foreignbody = { min = 30, max = 30 }
     },
 
     afflictions = {
         {
             identifier = "t_fracture",
             strength = 100,
-            limb = LimbType.Torso
-        },
-
-        {
-            identifier = "hypoxemia",
-            strength = 0
-        },
-
-        {
-            identifier = "cardiacarrest",
-            strength = 0
-        },
-
-        {
-            identifier = "aorticrupture",
-            strength = 0,
             limb = LimbType.Torso
         }
     }
@@ -130,23 +116,27 @@ local CAPTAIN_TRAUMA_PROFILE = {
 --------------------------------------------------
 
 local SECURITY_OFFICER_TRAUMA_PROFILE = {
-
+    final_health = -10,
     limbs = {
-
         [LimbType.LeftArm] = {
-            gunshot = 20,
-            bleeding = 30
+            gunshot = { min = 0, max = 0 },
+            bleeding = { min = 15, max = 25 }
         },
 
         [LimbType.RightArm] = {
-            gunshot = 20,
-            bleeding = 30
+            gunshot = { min = 0, max = 0 },
+            bleeding = { min = 15, max = 25 }
+        },
+
+        [LimbType.Head] = {
+            gunshot = { min = 0, max = 0 },
+            bleeding = { min = 20, max = 30 }
         },
 
         [LimbType.LeftLeg] = {
-            gunshot = 30,
-            bleeding = 50,
-            foreignbody = 40,
+            gunshot = { min = 80, max = 100 },
+            bleeding = { min = 70, max = 80 },
+            foreignbody = { min = 40, max = 45 },
             artery = 30,
             fracture = "ll_fracture",
             fractureStrength = 100,
@@ -154,35 +144,22 @@ local SECURITY_OFFICER_TRAUMA_PROFILE = {
         },
 
         [LimbType.RightLeg] = {
-            gunshot = 30,
-            bleeding = 50,
-            foreignbody = 40,
+            gunshot = { min = 60, max = 80 },
+            bleeding = { min = 60, max = 70 },
+            foreignbody = { min = 25, max = 30 },
+            artery = 30,
             fracture = "rl_fracture",
-            fractureStrength = 100,
-            artery = 30
+            fractureStrength = 100
         }
     },
 
-    torso = {
-        gunshot = 30,
-        bleeding = 50
-    },
+    torso = {},
 
     afflictions = {
         {
             identifier = "t_fracture",
             strength = 100,
             limb = LimbType.Torso
-        },
-
-        {
-            identifier = "hypoxemia",
-            strength = 0
-        },
-
-        {
-            identifier = "cardiacarrest",
-            strength = 0
         },
 
         {
@@ -198,38 +175,36 @@ local SECURITY_OFFICER_TRAUMA_PROFILE = {
 
 local ASSISTANT_TRAUMA_PROFILE = {
 
+    final_health = -10,
     limbs = {
-
+        [LimbType.Head] = {
+            bleeding = { min = 15, max = 25 },
+        },
         [LimbType.LeftArm] = {
-            gunshot = 10,
-            bleeding = 15
+            bleeding = { min = 15, max = 25 },
         },
 
         [LimbType.RightArm] = {
-            gunshot = 10,
-            bleeding = 15
+            bleeding = { min = 15, max = 25 },
         },
 
         [LimbType.LeftLeg] = {
-            gunshot = 10,
-            bleeding = 15
+            bleeding = { min = 20, max = 30 }
         },
 
         [LimbType.RightLeg] = {
-            gunshot = 10,
-            bleeding = 15
+            bleeding = { min = 20, max = 30 }
         }
     },
 
     torso = {
-        gunshot = 30,
-        bleeding = 40
+        bleeding = { min = 20, max = 30 }
     },
 
     afflictions = {
         {
             identifier = "t_fracture",
-            strength = 30,
+            strength = 100,
             limb = LimbType.Torso
         }
     }
@@ -241,37 +216,36 @@ local ASSISTANT_TRAUMA_PROFILE = {
 
 local MECHANIC_TRAUMA_PROFILE = {
 
+    final_health = -20,
     limbs = {
-
+        [LimbType.Head] = {
+            bleeding = { min = 15, max = 25 },
+        },
         [LimbType.LeftArm] = {
-            gunshot = 20,
-            bleeding = 30
+            bleeding = { min = 15, max = 25 },
         },
 
         [LimbType.RightArm] = {
-            gunshot = 20,
-            bleeding = 30
+            bleeding = { min = 15, max = 25 },
         },
 
         [LimbType.LeftLeg] = {
-            gunshot = 30,
-            bleeding = 50,
-            foreignbody = 20,
-            artery = 30,
-            fracture = "ll_fracture",
-            fractureStrength = 100,
+            gunshot = { min = 60, max = 70 },
+            bleeding = { min = 90, max = 100 },
+            foreignbody = { min = 40, max = 45 },
             amputation = 100
         },
 
         [LimbType.RightLeg] = {
-            gunshot = 30,
-            bleeding = 50
+            gunshot = { min = 40, max = 40 },
+            bleeding = { min = 50, max = 60 },
+            foreignbody = { min = 20, max = 20 }
         }
     },
 
     torso = {
-        gunshot = 30,
-        bleeding = 40
+        gunshot = { min = 15, max = 25 },
+        bleeding = { min = 15, max = 25 }
     },
 
     afflictions = {
@@ -289,37 +263,36 @@ local MECHANIC_TRAUMA_PROFILE = {
 
 local ENGINEER_TRAUMA_PROFILE = {
 
+    final_health = -20,
     limbs = {
-
+        [LimbType.Head] = {
+            bleeding = { min = 15, max = 25 },
+        },
         [LimbType.LeftArm] = {
-            gunshot = 20,
-            bleeding = 30
+            bleeding = { min = 15, max = 25 },
         },
 
         [LimbType.RightArm] = {
-            gunshot = 30,
-            bleeding = 50
+            bleeding = { min = 15, max = 25 },
         },
 
         [LimbType.LeftLeg] = {
-            gunshot = 30,
-            bleeding = 50,
-            foreignbody = 20,
-            artery = 30,
-            fracture = "ll_fracture",
-            fractureStrength = 100,
+            gunshot = { min = 60, max = 70 },
+            bleeding = { min = 90, max = 100 },
+            foreignbody = { min = 40, max = 45 },
             amputation = 100
         },
 
         [LimbType.RightLeg] = {
-            gunshot = 20,
-            bleeding = 30
+            gunshot = { min = 40, max = 40 },
+            bleeding = { min = 50, max = 60 },
+            foreignbody = { min = 20, max = 20 }
         }
     },
 
     torso = {
-        gunshot = 30,
-        bleeding = 40
+        gunshot = { min = 15, max = 25 },
+        bleeding = { min = 15, max = 25 }
     },
 
     afflictions = {
@@ -347,6 +320,7 @@ local FIXED_TRAUMA_PROFILES = {
 
     engineer = ENGINEER_TRAUMA_PROFILE
 }
+
 
 --------------------------------------------------
 -- Random bullet configuration
@@ -431,6 +405,18 @@ end
 
 local function pick(list)
     return list[randi(1, #list)]
+end
+
+local function resolve_strength(value)
+    if value == nil then
+        return nil
+    end
+
+    if type(value) == "table" then
+        return randf(value.min, value.max)
+    end
+
+    return value
 end
 
 --------------------------------------------------
@@ -538,6 +524,72 @@ local function new_amputation_state()
 end
 
 --------------------------------------------------
+-- Spawn severed limb item
+--------------------------------------------------
+
+local SEVERED_LIMB_ITEMS = {
+    [LimbType.LeftArm] = "larm",
+    [LimbType.RightArm] = "rarm",
+    [LimbType.LeftLeg] = "lleg",
+    [LimbType.RightLeg] = "rleg"
+}
+
+local function spawn_severed_limb(c, limb)
+    if c == nil then
+        return false
+    end
+
+    local identifier =
+        SEVERED_LIMB_ITEMS[limb]
+
+    if identifier == nil then
+        return false
+    end
+
+    local prefab =
+        ItemPrefab.GetItemPrefab(identifier)
+
+    if prefab == nil then
+        debug(
+            "missing severed limb prefab: "
+            .. tostring(identifier)
+        )
+        return false
+    end
+
+    if Entity == nil
+        or Entity.Spawner == nil
+        or Entity.Spawner.AddItemToSpawnQueue == nil then
+
+        debug(
+            "AddItemToSpawnQueue unavailable"
+        )
+
+        return false
+    end
+
+    local position =
+        c.WorldPosition
+
+    Entity.Spawner.AddItemToSpawnQueue(
+        prefab,
+        position,
+        nil,
+        nil,
+        function(item)
+            if item ~= nil then
+                debug(
+                    "spawned severed limb item="
+                    .. tostring(identifier)
+                )
+            end
+        end
+    )
+
+    return true
+end
+
+--------------------------------------------------
 -- Amputation
 --------------------------------------------------
 
@@ -601,6 +653,14 @@ local function amputate_limb(
         )
     end
 
+    --------------------------------------------------
+    -- Spawn dropped limb
+    --------------------------------------------------
+
+    spawn_severed_limb(
+        c,
+        limb
+    )
     --------------------------------------------------
     -- Update state
     --------------------------------------------------
@@ -1215,7 +1275,8 @@ end
 local function apply_fixed_limb_trauma(
     c,
     limb,
-    trauma
+    trauma,
+    amputationState
 )
 
     if c == nil
@@ -1230,12 +1291,7 @@ local function apply_fixed_limb_trauma(
 
     if trauma.gunshot ~= nil then
 
-        add(
-            c,
-            "gunshotwound",
-            trauma.gunshot,
-            limb
-        )
+        add(c, "gunshotwound", resolve_strength(trauma.gunshot), limb)
     end
 
     --------------------------------------------------
@@ -1247,7 +1303,7 @@ local function apply_fixed_limb_trauma(
         add(
             c,
             "bleeding",
-            trauma.bleeding,
+            resolve_strength(trauma.bleeding),
             limb
         )
     end
@@ -1261,7 +1317,7 @@ local function apply_fixed_limb_trauma(
         add(
             c,
             "foreignbody",
-            trauma.foreignbody,
+            resolve_strength(trauma.foreignbody),
             limb
         )
     end
@@ -1302,34 +1358,15 @@ local function apply_fixed_limb_trauma(
     -- Traumatic amputation
     --------------------------------------------------
 
-    if trauma.amputation ~= nil
-        and trauma.amputation > 0 then
+   if trauma.amputation ~= nil
+    and trauma.amputation > 0
+    and amputationState ~= nil then
 
-        local amputationAffliction =
-            AMPUTATION_AFFLICTIONS[limb]
-
-        if amputationAffliction ~= nil then
-
-            add(
-                c,
-                amputationAffliction,
-                trauma.amputation,
-                limb
-            )
-
-            if NT.BreakLimb ~= nil then
-
-                NT.BreakLimb(
-                    c,
-                    limb
-                )
-            end
-
-            debug(
-                "fixed traumatic amputation limb="
-                .. tostring(limb)
-            )
-        end
+        amputate_limb(
+            c,
+            limb,
+            amputationState
+        )
     end
 end
 
@@ -1354,7 +1391,7 @@ local function apply_fixed_torso_trauma(
         add(
             c,
             "gunshotwound",
-            trauma.gunshot,
+            resolve_strength(trauma.gunshot),
             LimbType.Torso
         )
     end
@@ -1364,7 +1401,7 @@ local function apply_fixed_torso_trauma(
         add(
             c,
             "bleeding",
-            trauma.bleeding,
+            resolve_strength(trauma.bleeding),
             LimbType.Torso
         )
     end
@@ -1374,7 +1411,7 @@ local function apply_fixed_torso_trauma(
         add(
             c,
             "foreignbody",
-            trauma.foreignbody,
+            resolve_strength(trauma.foreignbody),
             LimbType.Torso
         )
 
@@ -1425,7 +1462,8 @@ end
 
 local function apply_fixed_trauma_profile(
     c,
-    profile
+    profile,
+    amputationState
 )
 
     if c == nil
@@ -1445,7 +1483,8 @@ local function apply_fixed_trauma_profile(
             apply_fixed_limb_trauma(
                 c,
                 limb,
-                trauma
+                trauma,
+                amputationState
             )
         end
     end
@@ -1495,99 +1534,25 @@ end
 
 --------------------------------------------------
 -- Fixed mode:
--- Increase existing gunshot wounds and bleeding
--- until Character.Health / Vitality reaches zero.
---
--- Character.Health is read-only, so this does NOT
--- attempt to assign c.Health.
---------------------------------------------------
-
-local FIXED_FINISH_LIMBS = {
-
-    LimbType.LeftArm,
-    LimbType.RightArm,
-    LimbType.LeftLeg,
-    LimbType.RightLeg,
-    LimbType.Torso
-}
-
-local FIXED_FINISH_MAX_ITERATIONS = 32
-
-local FIXED_HEALTH_MIN = -10
-
---------------------------------------------------
--- Fixed casualty finishing weights
---
--- These weights are only used when adding extra
--- gunshot damage to bring vitality down to zero.
---
--- They do NOT change the original fixed trauma
--- profile.
---------------------------------------------------
-
-local FIXED_FINISH_WEIGHTS = {
-
-    captain = {
-        [LimbType.LeftArm] = 1,
-        [LimbType.RightArm] = 1,
-        [LimbType.LeftLeg] = 3,
-        [LimbType.RightLeg] = 3,
-        [LimbType.Torso] = 2
-    },
-
-    securityofficer = {
-        [LimbType.LeftArm] = 1,
-        [LimbType.RightArm] = 1,
-        [LimbType.LeftLeg] = 3,
-        [LimbType.RightLeg] = 3,
-        [LimbType.Torso] = 1
-    },
-
-    mechanic = {
-        [LimbType.LeftArm] = 1,
-        [LimbType.RightArm] = 1,
-        [LimbType.LeftLeg] = 3,
-        [LimbType.RightLeg] = 3,
-        [LimbType.Torso] = 1
-    },
-
-    engineer = {
-        [LimbType.LeftArm] = 1,
-        [LimbType.RightArm] = 1,
-        [LimbType.LeftLeg] = 3,
-        [LimbType.RightLeg] = 3,
-        [LimbType.Torso] = 1
-    },
-
-    assistant = {
-        [LimbType.LeftArm] = 1,
-        [LimbType.RightArm] = 1,
-        [LimbType.LeftLeg] = 1,
-        [LimbType.RightLeg] = 1,
-        [LimbType.Torso] = 1
-    }
-}
-
---------------------------------------------------
--- Fixed mode:
--- Increase existing gunshot wounds with
--- profession-specific limb weights until
+-- Increase existing gunshot wounds on the
+-- left arm, right arm and head until
 -- Character.Health reaches zero.
+--
+-- Only gunshotwound is used for finishing.
 --------------------------------------------------
 
 local FIXED_FINISH_LIMBS = {
     LimbType.LeftArm,
     LimbType.RightArm,
-    LimbType.LeftLeg,
-    LimbType.RightLeg,
-    LimbType.Torso
+    LimbType.Head
 }
 
 local FIXED_FINISH_MAX_ITERATIONS = 32
 
 local function fixed_finish_health(
     c,
-    jobName
+    jobName,
+    final_health
 )
 
     if c == nil then
@@ -1595,25 +1560,14 @@ local function fixed_finish_health(
     end
 
     --------------------------------------------------
-    -- Get profession weight table
-    --------------------------------------------------
-
-    local weights =
-        FIXED_FINISH_WEIGHTS[jobName]
-
-    if weights == nil then
-
-        debug(
-            "fixed_finish_health: missing weights for "
-            .. tostring(jobName)
-        )
-
-        weights =
-            FIXED_FINISH_WEIGHTS.assistant
-    end
-
-    --------------------------------------------------
-    -- Record existing gunshot wounds
+    -- Record existing gunshot wounds.
+    --
+    -- Only:
+    --   LeftArm
+    --   RightArm
+    --   Head
+    --
+    -- Amputated limbs are skipped.
     --------------------------------------------------
 
     local wounds = {}
@@ -1641,90 +1595,52 @@ local function fixed_finish_health(
                     0
                 )
 
-            if gunshot > 0 then
-
-                table.insert(
-                    wounds,
-                    {
-                        limb = limb,
-                        gunshot = gunshot,
-                        weight =
-                            weights[limb] or 1
-                    }
-                )
-            end
+            table.insert(
+                wounds,
+                {
+                    limb = limb,
+                    gunshot = gunshot
+                }
+            )
         end
     end
 
     if #wounds == 0 then
 
         debug(
-            "fixed_finish_health: no existing gunshot wounds"
+            "fixed_finish_health: no available finish limbs"
         )
 
         return
     end
 
     --------------------------------------------------
-    -- Calculate total weight
-    --------------------------------------------------
-
-    local totalWeight = 0
-
-    for _, wound in ipairs(wounds) do
-
-        totalWeight =
-            totalWeight
-            + wound.weight
-    end
-
-    if totalWeight <= 0 then
-        return
-    end
-
-    --------------------------------------------------
     -- Apply extra gunshot damage.
     --
-    -- The extra damage is distributed according to
-    -- profession-specific limb weights.
+    -- The same extra amount is distributed evenly
+    -- across the available limbs.
     --
-    -- Bleeding is increased as well, but slightly
-    -- less aggressively than gunshot damage.
+    -- No bleeding or other afflictions are added.
     --------------------------------------------------
 
     local function apply_extra(extra)
 
-        for _, wound in ipairs(wounds) do
+        if #wounds == 0 then
+            return
+        end
 
-            local distribution =
-                wound.weight
-                / totalWeight
+        local distribution =
+            1.0 / #wounds
+
+        for _, wound in ipairs(wounds) do
 
             local gunshotExtra =
                 extra * distribution
-
-            local bleedingExtra =
-                gunshotExtra * 0.75
 
             local newGunshot =
                 math.min(
                     wound.gunshot
                     + gunshotExtra,
-                    100
-                )
-
-            local currentBleeding =
-                HF.GetAfflictionStrengthLimb(
-                    c,
-                    wound.limb,
-                    "bleeding",
-                    0
-                )
-
-            local newBleeding =
-                math.min(
-                    currentBleeding
-                    + bleedingExtra,
                     100
                 )
 
@@ -1734,13 +1650,6 @@ local function fixed_finish_health(
                 wound.limb,
                 newGunshot
             )
-
-            -- HF.SetAfflictionLimb(
-            --     c,
-            --     "bleeding",
-            --     wound.limb,
-            --     newBleeding
-            -- )
         end
     end
 
@@ -1748,11 +1657,11 @@ local function fixed_finish_health(
     -- Already at zero
     --------------------------------------------------
 
-    if c.Health <= 0 then
+    if c.Health <= final_health then
 
         debug(
             string.format(
-                "fixed_finish_health: already zero health=%.6f",
+                "fixed_finish_health: already reach destination health=%.6f",
                 c.Health
             )
         )
@@ -1771,7 +1680,7 @@ local function fixed_finish_health(
 
     local safety = 0
 
-    while c.Health > FIXED_HEALTH_MIN
+    while c.Health > final_health
         and high < 10000
         and safety < 20 do
 
@@ -1780,18 +1689,19 @@ local function fixed_finish_health(
 
         apply_extra(high)
 
-        safety = safety + 1
+        safety =
+            safety + 1
     end
 
     --------------------------------------------------
-    -- Failed to reach zero
+    -- Failed to reach final_health
     --------------------------------------------------
 
-    if c.Health > 0 then
+    if c.Health > final_health then
 
         debug(
             string.format(
-                "fixed_finish_health: unable to reach zero health=%.6f extra=%.4f",
+                "fixed_finish_health: unable to reach final health=%.6f extra=%.4f",
                 c.Health,
                 high
             )
@@ -1814,7 +1724,7 @@ local function fixed_finish_health(
 
         apply_extra(mid)
 
-        if c.Health > FIXED_HEALTH_MIN then
+        if c.Health > final_health then
 
             low = mid
 
@@ -1825,7 +1735,7 @@ local function fixed_finish_health(
     end
 
     --------------------------------------------------
-    -- Select the result closer to zero
+    -- Select result closer to zero
     --------------------------------------------------
 
     apply_extra(low)
@@ -1870,6 +1780,7 @@ end
 --------------------------------------------------
 -- Spawn fixed casualty
 --------------------------------------------------
+
 
 local function spawn_fixed_casualty(
     origin,
@@ -1986,10 +1897,13 @@ local function spawn_fixed_casualty(
         )
 
     else
-
+        local amputationState =
+            new_amputation_state()
+        
         apply_fixed_trauma_profile(
             c,
-            traumaProfile
+            traumaProfile,
+            amputationState
         )
     end
 
@@ -1998,7 +1912,7 @@ local function spawn_fixed_casualty(
     -- existing gunshot wounds and bleeding.
     --------------------------------------------------
 
-    fixed_finish_health(c,jobName)
+    fixed_finish_health(c,jobName,traumaProfile.final_health)
 
     --------------------------------------------------
     -- Debug final state
